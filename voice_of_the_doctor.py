@@ -16,6 +16,27 @@ from elevenlabs.client import ElevenLabs
 
 ELEVENLABS_API_KEY=os.environ.get("ELEVENLABS_API_KEY")
 
+from pydub import AudioSegment
+
+def change_audio_speed(input_filepath, output_filepath, speed=1.25):
+    """
+    Changes the playback speed of an audio file.
+    
+    Args:
+        input_filepath (str): Path to the original audio file.
+        output_filepath (str): Path to save the modified audio file.
+        speed (float): Factor by which to speed up the audio. (e.g., 1.25 for 25% faster)
+    """
+    audio = AudioSegment.from_file(input_filepath)
+    # Modify the frame rate
+    new_frame_rate = int(audio.frame_rate * speed)
+    fast_audio = audio._spawn(audio.raw_data, overrides={'frame_rate': new_frame_rate})
+    # Export the audio with the original frame rate so that playback is faster
+    fast_audio = fast_audio.set_frame_rate(audio.frame_rate)
+    fast_audio.export(output_filepath, format="mp3")
+    
+# Example usage:
+change_audio_speed("final.mp3", "final_fast.mp3", speed=1.25)
 
 
 def text_to_speech_with_gtts(input_text, output_filepath):
@@ -53,7 +74,7 @@ def text_to_speech_with_elevenlabs(input_text, output_filepath):
     client=ElevenLabs(api_key=ELEVENLABS_API_KEY)
     audio=client.generate(
         text= input_text,
-        voice= "Aria",
+        voice= "Charlotte",
         output_format= "mp3_22050_32",
         model= "eleven_turbo_v2"
     )
