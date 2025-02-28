@@ -18,7 +18,7 @@ ELEVENLABS_API_KEY=os.environ.get("ELEVENLABS_API_KEY")
 
 
 
-def generate_medical_response(input_text, output_filepath):
+def text_to_speech_with_gtts(input_text, output_filepath):
     language="en"
 
     audioobj= gTTS(
