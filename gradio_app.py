@@ -1,60 +1,127 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-
 import os
 import gradio as gr
 
-from brain_of_the_doctor import encode_image, analyze_image_with_query
-from voice_of_the_patient import record_audio, transcribe_with_groq
-from voice_of_the_doctor import text_to_speech_with_gtts, text_to_speech_with_elevenlabs
+from voice_of_the_patient import transcribe_with_groq
+from voice_of_the_doctor import text_to_speech_with_elevenlabs
+from brain_of_the_doctor import chat_with_query
 
-#load_dotenv()
+# A system message to guide the overall style and policy of the chatbot
+SYSTEM_MESSAGE = {
+    "role": "system",
+    "content": (
+        "You are a professional, empathetic doctor providing concise, safe, and clear advice. "
+        "Respond with empathy for mental health issues, suggest possible causes for physical ailments, "
+        "and always advise consulting a qualified professional when needed. Keep your answers brief within 4-6."
+    )
+}
 
-system_prompt = (
-    "You are to act as a professional doctor for educational purposes. With what I see, I think you have ... "
-    "If the user mentions or presents concerns related to mental health (such as depression, suicidal thoughts, anxiety, distress, or self-harm), "
-    "respond with empathy and understanding. Offer support, suggest they seek professional help from a therapist, counselor, or helpline, "
-    "and remind them that speaking with a licensed professional is the best course of action. Provide contact information for mental health hotlines when appropriate. "
-    "If the issue seems physical (such as pain, injury, or other medical conditions), suggest possible causes but always emphasize the importance of seeing a healthcare professional for accurate diagnosis and treatment. "
-    "For minor ailments, offer common advice (such as rest, hydration, or over-the-counter remedies), but always recommend consulting a healthcare provider for persistent symptoms or serious conditions. "
-    "For emergencies or severe symptoms (e.g., heavy bleeding, chest pain, or difficulty breathing), suggest seeking immediate medical attention or calling emergency services. "
-    "For chronic conditions (like diabetes or hypertension), remind the user to consult with their healthcare provider for long-term management and care. "
-    "Do not provide harmful, unproven, or unsafe medical advice. Avoid encouraging dangerous actions, and always prioritize safety. "
-    "Keep your response concise, kind, and professional. Refrain from using numbers or special characters. Always respond as if addressing a real person and not an AI model. "
-    "Your tone should be that of a caring, professional doctor who is offering educational information in a safe and supportive manner."
-)
+def format_conversation(conversation):
+    """
+    Formats the entire conversation (user + assistant messages) into a single text string
+    for display in the output textbox.
+    """
+    chat_log = []
+    for msg in conversation:
+        if msg["role"] == "user":
+            chat_log.append(f"User: {msg['content']}")
+        elif msg["role"] == "assistant":
+            chat_log.append(f"Doctor: {msg['content']}")
+        else:
+            # system messages usually aren't displayed to the end user
+            pass
+    return "\n".join(chat_log)
 
+def process_inputs(audio_filepath, chat_input, conversation_history):
+    """
+    1. Transcribes audio if present.
+    2. Combines audio transcription + text input as the user's new message.
+    3. Appends the new user message to conversation_history.
+    4. Sends the entire conversation (including the system prompt) to the model.
+    5. Receives the doctor's new response and appends it to the conversation_history.
+    6. Returns the entire conversation in text form and the latest response as audio.
+    """
+    # conversation_history is a list of dicts: [{'role': 'system'|'user'|'assistant', 'content': str}, ...]
 
-def process_inputs(audio_filepath, image_filepath):
-    speech_to_text_output = transcribe_with_groq(GROQ_API_KEY=os.environ.get("GROQ_API_KEY"), 
-                                                 audio_filepath=audio_filepath,
-                                                 stt_model="whisper-large-v3")
+    if not conversation_history:
+        # If no history yet, initialize with the system message
+        conversation_history = [SYSTEM_MESSAGE]
 
-    # Handle the image input
-    if image_filepath:
-        doctor_response = analyze_image_with_query(query=system_prompt+speech_to_text_output, encoded_image=encode_image(image_filepath), model="llama-3.2-11b-vision-preview")
-    else:
-        doctor_response = "No image provided for me to analyze"
+    # Validate that at least one input is provided
+    if not audio_filepath and (not chat_input or chat_input.strip() == ""):
+        # Show the existing conversation, but no new response
+        conversation_text = format_conversation(conversation_history)
+        return conversation_text, None, conversation_history
 
-    voice_of_doctor = text_to_speech_with_elevenlabs(input_text=doctor_response, output_filepath="final.mp3") 
+    # 1. Transcribe audio if provided
+    speech_to_text = ""
+    if audio_filepath:
+        speech_to_text = transcribe_with_groq(
+            GROQ_API_KEY=os.environ.get("GROQ_API_KEY"),
+            audio_filepath=audio_filepath,
+            stt_model="whisper-large-v3"
+        ).strip()
 
-    return speech_to_text_output, doctor_response, voice_of_doctor
+    # 2. Combine audio transcription + text input
+    user_message = ""
+    if speech_to_text:
+        user_message += speech_to_text
+    if chat_input and chat_input.strip():
+        # Add a space or newline if both are present
+        if user_message:
+            user_message += "\n"
+        user_message += chat_input.strip()
 
+    if not user_message:
+        # If the combined message is empty, do nothing new
+        conversation_text = format_conversation(conversation_history)
+        return conversation_text, None, conversation_history
+
+    # 3. Append the new user message to the conversation
+    conversation_history.append({"role": "user", "content": user_message})
+
+    # 4. Send the entire conversation to the model
+    # (system message + all user and assistant messages)
+    doctor_response = chat_with_query(
+        messages=conversation_history,  # pass the entire conversation
+        model="llama-3.2-11b-vision-preview"
+    )
+
+    # 5. Append the doctor's response
+    conversation_history.append({"role": "assistant", "content": doctor_response})
+
+    # 6. Convert the new response to audio
+    audio_response_path = "final.mp3"
+    text_to_speech_with_elevenlabs(
+        input_text=doctor_response,
+        output_filepath=audio_response_path
+    )
+
+    # Format the entire conversation for display
+    conversation_text = format_conversation(conversation_history)
+
+    return conversation_text, audio_response_path, conversation_history
 
 # Create the interface
 iface = gr.Interface(
     fn=process_inputs,
     inputs=[
-        gr.Audio(sources=["microphone"], type="filepath"),
-        gr.Image(type="filepath")
+        gr.Audio(sources=["microphone"], type="filepath", label="Voice Input"),
+        gr.Textbox(label="Chat Input", placeholder="Type your message here..."),
+        gr.State(value=[])  # The conversation history, stored as a list of messages
     ],
     outputs=[
-        gr.Textbox(label="Speech to Text"),
-        gr.Textbox(label="Doctor's Response"),
-        gr.Audio("Temp.mp3")
+        gr.Textbox(label="Conversation", lines=10),
+        gr.Audio(label="Doctor's Response (Audio)"),
+        gr.State()  # Updated conversation history
     ],
-    title="AI Doctor with Vision and Voice"
+    title="AI Doctor Chatbot"
 )
 
 iface.launch(debug=True)
+
+
+
+
