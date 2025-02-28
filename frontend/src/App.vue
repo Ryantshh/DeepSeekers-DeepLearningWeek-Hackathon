@@ -1,22 +1,20 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-
+import NavbarView from './views/NavbarView.vue'
+import AvatarView from './views/AvatarView.vue'
 </script>
 
 <template>
-  <header>
-
-    <div class="wrapper">
-
+  <div class="relative w-screen min-h-screen">
+    <div class="absolute inset-0 w-full h-full bg-cover bg-center bg-[url('./assets/bg.png')] opacity-60"></div>
+    <div class="relative z-10">
+      <NavbarView />
+      <div>
+        <AvatarView />
+      </div>
+      <router-view />
     </div>
-  </header>
-
-  <h1 class="text-3xl font-bold underline text-red-500">
-    If this line is underlined and in red, then tailwind css installation is successful
-  </h1>
-
-
-  <RouterView />
+  </div>
 </template>
 
 <style scoped></style>
