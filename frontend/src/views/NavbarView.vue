@@ -134,7 +134,6 @@ const route = useRoute()
 const navLinks = [
   { to: '/', text: 'Home' },
   { to: '/about', text: 'About' },
-  { to: '/therapist', text: 'Therapist' },
   { to: '/therapist-dashboard', text: 'Dashboard' },
   { to: '/transcribe', text: 'Transcribe' },
   // { to: '/mentalHealthScreen', text: 'Mental Analysis' },

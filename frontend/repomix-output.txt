@@ -55,20 +55,25 @@ jsconfig.json
 package.json
 README.md
 src/App.vue
-src/assets/logo.svg
-src/components/icons/IconCommunity.vue
-src/components/icons/IconDocumentation.vue
-src/components/icons/IconEcosystem.vue
-src/components/icons/IconSupport.vue
-src/components/icons/IconTooling.vue
+src/components/AnimatedAvatar.vue
+src/components/Nav.vue
+src/data/therapist.json
 src/input.css
 src/main.js
 src/output.css
 src/router/index.js
 src/stores/counter.js
+src/views/AboutView.vue
 src/views/AvatarView.vue
+src/views/Community.vue
+src/views/DomainCard.vue
+src/views/MentalHealthScreenView.vue
 src/views/NavbarView.vue
+src/views/NotFound.vue
 src/views/NotFoundView.vue
+src/views/ProfileView.vue
+src/views/TherapistView.vue
+src/views/TranscribeView.vue
 tailwind.config.js
 vite.config.js
 
@@ -207,10 +212,13 @@ File: package.json
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@pixi/sound": "^6.0.1",
     "@tailwindcss/vite": "^4.0.3",
     "axios": "^1.8.1",
+    "chart.js": "^4.4.8",
     "firebase": "^11.4.0",
     "pinia": "^2.3.1",
+    "pixi.js": "^8.8.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
@@ -266,100 +274,565 @@ npm run build
 npm run lint
 ```
 
+npx tailwindcss -i ./src/input.css -o ./src/output.css --watch
+
 ================
 File: src/App.vue
 ================
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import NavbarView from './views/NavbarView.vue'
-import AvatarView from './views/AvatarView.vue'
-import NotFoundView from './views/NotFoundView.vue'
 </script>
 
 <template>
   <div class="relative w-screen min-h-screen">
     <div class="absolute inset-0 w-full h-full bg-cover bg-center bg-[url('./assets/bg.png')] opacity-60"></div>
-    <div class="relative z-10">
-      <NavbarView />
-
+    
+    <!-- Fixed navbar stays at the top -->
+    <NavbarView class="fixed top-0 left-0 w-full z-20" />
+    
+    <!-- Content starts after 64px to avoid overlapping the fixed navbar -->
+    <div class="relative z-10 pt-16">
       <router-view />
     </div>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* If needed, additional styles can be added here */
+</style>
 
 ================
-File: src/assets/logo.svg
-================
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 261.76 226.69"><path d="M161.096.001l-30.225 52.351L100.647.001H-.005l130.877 226.688L261.749.001z" fill="#41b883"/><path d="M161.096.001l-30.225 52.351L100.647.001H52.346l78.526 136.01L209.398.001z" fill="#34495e"/></svg>
-
-================
-File: src/components/icons/IconCommunity.vue
+File: src/components/AnimatedAvatar.vue
 ================
 <template>
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
-    <path
-      d="M15 4a1 1 0 1 0 0 2V4zm0 11v-1a1 1 0 0 0-1 1h1zm0 4l-.707.707A1 1 0 0 0 16 19h-1zm-4-4l.707-.707A1 1 0 0 0 11 14v1zm-4.707-1.293a1 1 0 0 0-1.414 1.414l1.414-1.414zm-.707.707l-.707-.707.707.707zM9 11v-1a1 1 0 0 0-.707.293L9 11zm-4 0h1a1 1 0 0 0-1-1v1zm0 4H4a1 1 0 0 0 1.707.707L5 15zm10-9h2V4h-2v2zm2 0a1 1 0 0 1 1 1h2a3 3 0 0 0-3-3v2zm1 1v6h2V7h-2zm0 6a1 1 0 0 1-1 1v2a3 3 0 0 0 3-3h-2zm-1 1h-2v2h2v-2zm-3 1v4h2v-4h-2zm1.707 3.293l-4-4-1.414 1.414 4 4 1.414-1.414zM11 14H7v2h4v-2zm-4 0c-.276 0-.525-.111-.707-.293l-1.414 1.414C5.42 15.663 6.172 16 7 16v-2zm-.707 1.121l3.414-3.414-1.414-1.414-3.414 3.414 1.414 1.414zM9 12h4v-2H9v2zm4 0a3 3 0 0 0 3-3h-2a1 1 0 0 1-1 1v2zm3-3V3h-2v6h2zm0-6a3 3 0 0 0-3-3v2a1 1 0 0 1 1 1h2zm-3-3H3v2h10V0zM3 0a3 3 0 0 0-3 3h2a1 1 0 0 1 1-1V0zM0 3v6h2V3H0zm0 6a3 3 0 0 0 3 3v-2a1 1 0 0 1-1-1H0zm3 3h2v-2H3v2zm1-1v4h2v-4H4zm1.707 4.707l.586-.586-1.414-1.414-.586.586 1.414 1.414z"
-    />
-  </svg>
+  <div class="min-h-screen p-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Avatar Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 flex flex-col">
+          <!-- Toggle Button -->
+          <div class="flex justify-center mb-4">
+            <div class="inline-flex items-center bg-gray-200 rounded-full p-1">
+              <button
+                @click="gender = 'male'"
+                :class="[
+                  'py-2 px-6 rounded-full transition-all duration-200',
+                  gender === 'male' ? 'bg-blue-500 text-white' : 'text-gray-700',
+                ]"
+              >
+                Male
+              </button>
+              <button
+                @click="gender = 'female'"
+                :class="[
+                  'py-2 px-6 rounded-full transition-all duration-200',
+                  gender === 'female' ? 'bg-pink-500 text-white' : 'text-gray-700',
+                ]"
+              >
+                Female
+              </button>
+            </div>
+          </div>
+
+          <!-- Animated Avatar -->
+          <AnimatedAvatar
+            :gender="gender"
+            :response-text="latestResponse"
+            :is-speaking="isSpeaking"
+          />
+          <div class="p-3">
+            <p class="text-gray-800 text-center font-medium capitalize">{{ gender }} Avatar</p>
+          </div>
+        </div>
+
+        <!-- Chat Space -->
+        <div class="bg-white rounded-lg shadow-md flex flex-col h-[500px]">
+          <!-- Chat Header -->
+          <div class="p-4 border-b flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">
+              Chat with {{ gender === 'male' ? 'John' : 'Jane' }}
+            </h2>
+            <div class="flex items-center space-x-2">
+              <button
+                @click="toggleVoiceResponse"
+                class="p-2 rounded-full hover:bg-gray-100"
+                :class="{ 'text-blue-500': voiceResponseEnabled }"
+                title="Toggle voice responses"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Messages -->
+          <div
+            class="flex-1 p-4 overflow-y-auto bg-gray-50"
+            ref="messagesContainer"
+            style="max-height: calc(500px - 130px)"
+          >
+            <div class="space-y-4">
+              <div
+                v-for="(message, index) in messages"
+                :key="index"
+                :class="[
+                  'flex items-start gap-2.5',
+                  message.sender === 'user' ? 'flex-row-reverse' : '',
+                ]"
+              >
+                <div
+                  :class="[
+                    'w-8 h-8 rounded-full flex-shrink-0',
+                    message.sender === 'user' ? 'bg-blue-200' : 'bg-gray-200',
+                  ]"
+                ></div>
+                <div
+                  :class="[
+                    'rounded-lg p-3 max-w-[80%]',
+                    message.sender === 'user' ? 'bg-blue-500' : 'bg-gray-200',
+                  ]"
+                >
+                  <p
+                    :class="['text-sm', message.sender === 'user' ? 'text-white' : 'text-gray-800']"
+                  >
+                    {{ message.text }}
+                  </p>
+                  <button
+                    v-if="message.sender === 'assistant'"
+                    @click="speakMessage(message.text)"
+                    class="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-3 w-3 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Play
+                  </button>
+                </div>
+              </div>
+              <div v-if="isLoading" class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0"></div>
+                <div class="bg-gray-200 rounded-lg p-3">
+                  <p class="text-sm text-gray-800">
+                    <span class="inline-block animate-pulse">...</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat Input -->
+          <div class="p-4 border-t mt-auto">
+            <div class="flex items-center">
+              <input
+                v-model="newMessage"
+                @keyup.enter="sendMessage"
+                type="text"
+                placeholder="Type a message..."
+                class="flex-1 border rounded-l-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :disabled="isLoading || isListening"
+              />
+              <button
+                @click="sendMessage"
+                class="bg-blue-500 text-white py-2 px-4 rounded-r-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+                :disabled="isLoading || isListening || !newMessage.trim()"
+              >
+                Send
+              </button>
+              <button
+                @click="toggleListening"
+                class="bg-gray-200 text-gray-700 py-2 px-3 rounded-lg ml-2 hover:bg-gray-300 transition-colors"
+                :class="{ 'bg-red-500 text-white hover:bg-red-600': isListening }"
+                :disabled="isLoading"
+                title="Voice input"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div v-if="isListening" class="mt-2 text-sm text-center text-red-500 animate-pulse">
+              Listening... Say something or click the mic to stop
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
+  
+  <script setup>
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
+import AnimatedAvatar from '../components/AnimatedAvatar.vue'
+
+const gender = ref('female')
+const newMessage = ref('')
+const messages = ref([{ sender: 'assistant', text: 'Hello! How can I help you today?' }])
+const isLoading = ref(false)
+const messagesContainer = ref(null)
+const isListening = ref(false)
+const recognition = ref(null)
+const voiceResponseEnabled = ref(false)
+const latestResponse = ref('')
+const isSpeaking = ref(false)
+const speechSynthesis = window.speechSynthesis
+
+// Initialize speech recognition
+const initSpeechRecognition = () => {
+  if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    recognition.value = new SpeechRecognition()
+    recognition.value.continuous = true
+    recognition.value.interimResults = false
+    recognition.value.lang = 'en-US'
+
+    recognition.value.onresult = (event) => {
+      const last = event.results.length - 1
+      newMessage.value = event.results[last][0].transcript
+    }
+
+    recognition.value.onerror = (event) => {
+      console.error('Speech recognition error', event.error)
+      if (event.error !== 'no-speech') isListening.value = false
+    }
+
+    recognition.value.onend = () => {
+      if (isListening.value) {
+        try {
+          recognition.value.start()
+        } catch (error) {
+          console.error('Failed to restart speech recognition:', error)
+          isListening.value = false
+        }
+      }
+    }
+  }
+}
+
+// Toggle speech recognition
+const toggleListening = () => {
+  if (!recognition.value) initSpeechRecognition()
+  if (!recognition.value) {
+    alert('Speech recognition not supported.')
+    return
+  }
+
+  if (isListening.value) {
+    recognition.value.stop()
+    isListening.value = false
+    if (newMessage.value.trim()) sendMessage()
+  } else {
+    recognition.value.start()
+    isListening.value = true
+  }
+}
+
+// Toggle voice response
+const toggleVoiceResponse = () => {
+  voiceResponseEnabled.value = !voiceResponseEnabled.value
+}
+
+// Speak message
+const speakMessage = (text) => {
+  if (speechSynthesis.speaking) speechSynthesis.cancel()
+
+  const utterance = new SpeechSynthesisUtterance(text)
+  const voices = speechSynthesis.getVoices()
+  if (voices.length) {
+    const englishVoices = voices.filter((v) => v.lang.includes('en'))
+    if (englishVoices.length) {
+      utterance.voice =
+        englishVoices.find((v) =>
+          gender.value === 'female'
+            ? v.name.includes('Female') || v.name.includes('female')
+            : v.name.includes('Male') || v.name.includes('male')
+        ) || englishVoices[0]
+    }
+  }
+  utterance.pitch = gender.value === 'female' ? 1.2 : 0.9
+  utterance.rate = 1.0
+
+  isSpeaking.value = true
+  utterance.onend = () => (isSpeaking.value = false)
+  speechSynthesis.speak(utterance)
+}
+
+// Scroll to bottom
+const scrollToBottom = async () => {
+  await nextTick()
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  }
+}
+
+// Load voices
+const loadVoices = () => {
+  return new Promise((resolve) => {
+    const voices = speechSynthesis.getVoices()
+    if (voices.length) resolve(voices)
+    else speechSynthesis.onvoiceschanged = () => resolve(speechSynthesis.getVoices())
+  })
+}
+
+onMounted(async () => {
+  scrollToBottom()
+  initSpeechRecognition()
+  await loadVoices()
+})
+
+onUnmounted(() => {
+  if (speechSynthesis.speaking) speechSynthesis.cancel()
+  if (recognition.value && isListening.value) recognition.value.stop()
+})
+
+watch(messages, scrollToBottom, { deep: true })
+
+// Send message to OpenAI
+const sendMessage = async () => {
+  if (!newMessage.value.trim() || isLoading.value) return
+
+  const userMessage = newMessage.value.trim()
+  messages.value.push({ sender: 'user', text: userMessage })
+  newMessage.value = ''
+  isLoading.value = true
+
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a helpful and caring therapist named ${
+              gender.value === 'male' ? 'John' : 'Jane'
+            }. Keep responses conversational and friendly and reply to negative statements with positive affirmations.`,
+          },
+          ...messages.value.map((msg) => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text,
+          })),
+        ],
+        max_tokens: 1000,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        },
+      }
+    )
+
+    const responseText = response.data.choices[0].message.content
+    messages.value.push({ sender: 'assistant', text: responseText })
+    latestResponse.value = responseText
+
+    if (voiceResponseEnabled.value) {
+      await nextTick()
+      speakMessage(responseText)
+    }
+  } catch (error) {
+    console.error('Error calling OpenAI API:', error)
+    messages.value.push({
+      sender: 'assistant',
+      text: 'Sorry, I encountered an error. Please try again later.',
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+watch(gender, () => {
+  if (speechSynthesis.speaking) speechSynthesis.cancel()
+  const responseText = `I'm now ${
+    gender.value === 'male' ? 'John' : 'Jane'
+  }. How can I help you today?`
+  messages.value.push({ sender: 'assistant', text: responseText })
+  latestResponse.value = responseText
+  if (voiceResponseEnabled.value) setTimeout(() => speakMessage(responseText), 100)
+})
+</script>
+  
+  <style>
+.overflow-y-auto {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+</style>
 
 ================
-File: src/components/icons/IconDocumentation.vue
+File: src/components/Nav.vue
 ================
 <template>
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" fill="currentColor">
-    <path
-      d="M11 2.253a1 1 0 1 0-2 0h2zm-2 13a1 1 0 1 0 2 0H9zm.447-12.167a1 1 0 1 0 1.107-1.666L9.447 3.086zM1 2.253L.447 1.42A1 1 0 0 0 0 2.253h1zm0 13H0a1 1 0 0 0 1.553.833L1 15.253zm8.447.833a1 1 0 1 0 1.107-1.666l-1.107 1.666zm0-14.666a1 1 0 1 0 1.107 1.666L9.447 1.42zM19 2.253h1a1 1 0 0 0-.447-.833L19 2.253zm0 13l-.553.833A1 1 0 0 0 20 15.253h-1zm-9.553-.833a1 1 0 1 0 1.107 1.666L9.447 14.42zM9 2.253v13h2v-13H9zm1.553-.833C9.203.523 7.42 0 5.5 0v2c1.572 0 2.961.431 3.947 1.086l1.107-1.666zM5.5 0C3.58 0 1.797.523.447 1.42l1.107 1.666C2.539 2.431 3.928 2 5.5 2V0zM0 2.253v13h2v-13H0zm1.553 13.833C2.539 15.431 3.928 15 5.5 15v-2c-1.92 0-3.703.523-5.053 1.42l1.107 1.666zM5.5 15c1.572 0 2.961.431 3.947 1.086l1.107-1.666C9.203 13.523 7.42 13 5.5 13v2zm5.053-11.914C11.539 2.431 12.928 2 14.5 2V0c-1.92 0-3.703.523-5.053 1.42l1.107 1.666zM14.5 2c1.573 0 2.961.431 3.947 1.086l1.107-1.666C18.203.523 16.421 0 14.5 0v2zm3.5.253v13h2v-13h-2zm1.553 12.167C18.203 13.523 16.421 13 14.5 13v2c1.573 0 2.961.431 3.947 1.086l1.107-1.666zM14.5 13c-1.92 0-3.703.523-5.053 1.42l1.107 1.666C11.539 15.431 12.928 15 14.5 15v-2z"
-    />
-  </svg>
+  <nav class="fixed top-0 w-full bg-stone-800 text-stone-100 shadow-lg z-50 transition-all duration-300"
+    :class="{ 'py-4': !scrolled, 'py-2 bg-stone-800/95 backdrop-blur-sm': scrolled }">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <router-link to="/" class="text-xl font-bold flex items-center space-x-2 hover:text-orange-200 transition-colors">
+        <span>Chat With Me</span>
+      </router-link>
+
+      <div class="flex items-center space-x-2">
+        <!-- Removed the incorrect template tag here -->
+        <div class="md:flex space-x-1">
+          <router-link to="/profile" class="px-4 py-2 rounded-md hover:bg-stone-700 transition-colors text-stone-100">
+            Profile
+          </router-link>
+          <router-link to="/community"
+            class="px-4 py-2 rounded-md hover:bg-stone-700 transition-colors text-stone-100">
+            Community
+          </router-link>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <!-- Spacer to prevent content from being hidden under fixed navbar -->
+  <div class="h-16"></div>
 </template>
 
-================
-File: src/components/icons/IconEcosystem.vue
-================
-<template>
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" fill="currentColor">
-    <path
-      d="M11.447 8.894a1 1 0 1 0-.894-1.789l.894 1.789zm-2.894-.789a1 1 0 1 0 .894 1.789l-.894-1.789zm0 1.789a1 1 0 1 0 .894-1.789l-.894 1.789zM7.447 7.106a1 1 0 1 0-.894 1.789l.894-1.789zM10 9a1 1 0 1 0-2 0h2zm-2 2.5a1 1 0 1 0 2 0H8zm9.447-5.606a1 1 0 1 0-.894-1.789l.894 1.789zm-2.894-.789a1 1 0 1 0 .894 1.789l-.894-1.789zm2 .789a1 1 0 1 0 .894-1.789l-.894 1.789zm-1.106-2.789a1 1 0 1 0-.894 1.789l.894-1.789zM18 5a1 1 0 1 0-2 0h2zm-2 2.5a1 1 0 1 0 2 0h-2zm-5.447-4.606a1 1 0 1 0 .894-1.789l-.894 1.789zM9 1l.447-.894a1 1 0 0 0-.894 0L9 1zm-2.447.106a1 1 0 1 0 .894 1.789l-.894-1.789zm-6 3a1 1 0 1 0 .894 1.789L.553 4.106zm2.894.789a1 1 0 1 0-.894-1.789l.894 1.789zm-2-.789a1 1 0 1 0-.894 1.789l.894-1.789zm1.106 2.789a1 1 0 1 0 .894-1.789l-.894 1.789zM2 5a1 1 0 1 0-2 0h2zM0 7.5a1 1 0 1 0 2 0H0zm8.553 12.394a1 1 0 1 0 .894-1.789l-.894 1.789zm-1.106-2.789a1 1 0 1 0-.894 1.789l.894-1.789zm1.106 1a1 1 0 1 0 .894 1.789l-.894-1.789zm2.894.789a1 1 0 1 0-.894-1.789l.894 1.789zM8 19a1 1 0 1 0 2 0H8zm2-2.5a1 1 0 1 0-2 0h2zm-7.447.394a1 1 0 1 0 .894-1.789l-.894 1.789zM1 15H0a1 1 0 0 0 .553.894L1 15zm1-2.5a1 1 0 1 0-2 0h2zm12.553 2.606a1 1 0 1 0 .894 1.789l-.894-1.789zM17 15l.447.894A1 1 0 0 0 18 15h-1zm1-2.5a1 1 0 1 0-2 0h2zm-7.447-5.394l-2 1 .894 1.789 2-1-.894-1.789zm-1.106 1l-2-1-.894 1.789 2 1 .894-1.789zM8 9v2.5h2V9H8zm8.553-4.894l-2 1 .894 1.789 2-1-.894-1.789zm.894 0l-2-1-.894 1.789 2 1 .894-1.789zM16 5v2.5h2V5h-2zm-4.553-3.894l-2-1-.894 1.789 2 1 .894-1.789zm-2.894-1l-2 1 .894 1.789 2-1L8.553.106zM1.447 5.894l2-1-.894-1.789-2 1 .894 1.789zm-.894 0l2 1 .894-1.789-2-1-.894 1.789zM0 5v2.5h2V5H0zm9.447 13.106l-2-1-.894 1.789 2 1 .894-1.789zm0 1.789l2-1-.894-1.789-2 1 .894 1.789zM10 19v-2.5H8V19h2zm-6.553-3.894l-2-1-.894 1.789 2 1 .894-1.789zM2 15v-2.5H0V15h2zm13.447 1.894l2-1-.894-1.789-2 1 .894 1.789zM18 15v-2.5h-2V15h2z"
-    />
-  </svg>
-</template>
+<script>
+import { useToast } from "vue-toastification";
+
+export default {
+  data() {
+    return {
+      scrolled: false,
+      mobileMenuOpen: false,
+      toast: useToast(),
+    };
+  },
+  created() {
+    window.addEventListener('scroll', this.handleScroll);
+  },
+  unmounted() {
+    window.removeEventListener('scroll', this.handleScroll);
+  },
+  methods: {
+    handleScroll() {
+      this.scrolled = window.scrollY > 10;
+    },
+    toggleMobileMenu() {
+      this.mobileMenuOpen = !this.mobileMenuOpen;
+    }
+  },
+};
+</script>
 
 ================
-File: src/components/icons/IconSupport.vue
+File: src/data/therapist.json
 ================
-<template>
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
-    <path
-      d="M10 3.22l-.61-.6a5.5 5.5 0 0 0-7.666.105 5.5 5.5 0 0 0-.114 7.665L10 18.78l8.39-8.4a5.5 5.5 0 0 0-.114-7.665 5.5 5.5 0 0 0-7.666-.105l-.61.61z"
-    />
-  </svg>
-</template>
-
-================
-File: src/components/icons/IconTooling.vue
-================
-<!-- This icon is from <https://github.com/Templarian/MaterialDesign>, distributed under Apache 2.0 (https://www.apache.org/licenses/LICENSE-2.0) license-->
-<template>
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    xmlns:xlink="http://www.w3.org/1999/xlink"
-    aria-hidden="true"
-    role="img"
-    class="iconify iconify--mdi"
-    width="24"
-    height="24"
-    preserveAspectRatio="xMidYMid meet"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d="M20 18v-4h-3v1h-2v-1H9v1H7v-1H4v4h16M6.33 8l-1.74 4H7v-1h2v1h6v-1h2v1h2.41l-1.74-4H6.33M9 5v1h6V5H9m12.84 7.61c.1.22.16.48.16.8V18c0 .53-.21 1-.6 1.41c-.4.4-.85.59-1.4.59H4c-.55 0-1-.19-1.4-.59C2.21 19 2 18.53 2 18v-4.59c0-.32.06-.58.16-.8L4.5 7.22C4.84 6.41 5.45 6 6.33 6H7V5c0-.55.18-1 .57-1.41C7.96 3.2 8.44 3 9 3h6c.56 0 1.04.2 1.43.59c.39.41.57.86.57 1.41v1h.67c.88 0 1.49.41 1.83 1.22l2.34 5.39z"
-      fill="currentColor"
-    ></path>
-  </svg>
-</template>
+[
+    {
+        "name": "John Smith",
+        "specialise": "Family Therapy, Children",
+        "quote": "I believe that family is the foundation of happiness.",
+        "imageUrl": "../assets/therapists/1.png"
+    },
+    {
+        "name": "Sarah Lee",
+        "specialise": "Anxiety, Stress Management",
+        "quote": "Your mind is your home—let's make it a peaceful one.",
+        "imageUrl": "../assets/therapists/2.png"
+    },
+    {
+        "name": "Michael Tan",
+        "specialise": "Depression, Mood Disorders",
+        "quote": "Healing starts with understanding yourself.",
+        "imageUrl": "../assets/therapists/3.png"
+    },
+    {
+        "name": "Emma Wong",
+        "specialise": "Relationship Counseling, Couples Therapy",
+        "quote": "Love is a journey we navigate together.",
+        "imageUrl": "../assets/therapists/4.png"
+    },
+    {
+        "name": "David Lim",
+        "specialise": "Cognitive Behavioral Therapy (CBT), Self-Esteem",
+        "quote": "Small steps lead to big changes in life.",
+        "imageUrl": "../assets/therapists/5.png"
+    },
+    {
+        "name": "Jessica Chan",
+        "specialise": "Trauma Recovery, PTSD",
+        "quote": "You are stronger than the experiences that tried to break you.",
+        "imageUrl": "../assets/therapists/6.png"
+    },
+    {
+        "name": "James Koh",
+        "specialise": "Addiction Recovery, Behavioral Therapy",
+        "quote": "Every new day is another chance to change your story.",
+        "imageUrl": "../assets/therapists/7.png"
+    },
+    {
+        "name": "Olivia Ng",
+        "specialise": "Child Development, Autism Spectrum Disorders",
+        "quote": "Every child has a unique way of seeing the world.",
+        "imageUrl": "../assets/therapists/8.png"
+    },
+    {
+        "name": "Benjamin Ho",
+        "specialise": "Workplace Stress, Career Counseling",
+        "quote": "Balance and purpose are the keys to a fulfilling career.",
+        "imageUrl": "../assets/therapists/9.png"
+    },
+    {
+        "name": "Sophia Teo",
+        "specialise": "Mindfulness, Holistic Therapy",
+        "quote": "The present moment is where true peace resides.",
+        "imageUrl": "../assets/therapists/10.png"
+    }
+]
 
 ================
 File: src/input.css
@@ -979,6 +1452,22 @@ video {
   }
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.static {
+  position: static;
+}
+
 .fixed {
   position: fixed;
 }
@@ -995,20 +1484,36 @@ video {
   inset: 0px;
 }
 
-.bottom-0 {
-  bottom: 0px;
-}
-
 .left-0 {
   left: 0px;
+}
+
+.left-1\/2 {
+  left: 50%;
 }
 
 .right-0 {
   right: 0px;
 }
 
+.top-0 {
+  top: 0px;
+}
+
+.top-1\/2 {
+  top: 50%;
+}
+
 .z-10 {
   z-index: 10;
+}
+
+.z-20 {
+  z-index: 20;
+}
+
+.z-50 {
+  z-index: 50;
 }
 
 .mx-auto {
@@ -1016,24 +1521,96 @@ video {
   margin-right: auto;
 }
 
+.mb-0 {
+  margin-bottom: 0px;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+
 .mb-4 {
   margin-bottom: 1rem;
 }
 
-.mt-auto {
-  margin-top: auto;
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.ml-3 {
+  margin-left: 0.75rem;
+}
+
+.ml-4 {
+  margin-left: 1rem;
 }
 
 .mr-1 {
   margin-right: 0.25rem;
 }
 
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-4 {
+  margin-right: 1rem;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
 .mt-2 {
   margin-top: 0.5rem;
 }
 
-.ml-2 {
-  margin-left: 0.5rem;
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mt-5 {
+  margin-top: 1.25rem;
+}
+
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
+.mt-8 {
+  margin-top: 2rem;
+}
+
+.mt-auto {
+  margin-top: auto;
+}
+
+.-ml-1 {
+  margin-left: -0.25rem;
+}
+
+.block {
+  display: block;
 }
 
 .inline-block {
@@ -1056,8 +1633,52 @@ video {
   display: none;
 }
 
+.h-10 {
+  height: 2.5rem;
+}
+
+.h-12 {
+  height: 3rem;
+}
+
+.h-16 {
+  height: 4rem;
+}
+
+.h-2\.5 {
+  height: 0.625rem;
+}
+
+.h-3 {
+  height: 0.75rem;
+}
+
+.h-40 {
+  height: 10rem;
+}
+
+.h-5 {
+  height: 1.25rem;
+}
+
+.h-6 {
+  height: 1.5rem;
+}
+
+.h-64 {
+  height: 16rem;
+}
+
 .h-8 {
   height: 2rem;
+}
+
+.h-96 {
+  height: 24rem;
+}
+
+.h-\[400px\] {
+  height: 400px;
 }
 
 .h-\[500px\] {
@@ -1068,28 +1689,68 @@ video {
   height: 100%;
 }
 
-.h-\[400px\] {
-  height: 400px;
+.h-screen {
+  height: 100vh;
 }
 
-.h-3 {
-  height: 0.75rem;
+.h-20 {
+  height: 5rem;
 }
 
-.h-5 {
-  height: 1.25rem;
+.h-4 {
+  height: 1rem;
+}
+
+.max-h-48 {
+  max-height: 12rem;
+}
+
+.max-h-56 {
+  max-height: 14rem;
+}
+
+.max-h-\[90vh\] {
+  max-height: 90vh;
 }
 
 .min-h-screen {
   min-height: 100vh;
 }
 
-.w-8 {
-  width: 2rem;
+.w-10 {
+  width: 2.5rem;
 }
 
-.w-\[500px\] {
-  width: 500px;
+.w-12 {
+  width: 3rem;
+}
+
+.w-16 {
+  width: 4rem;
+}
+
+.w-3 {
+  width: 0.75rem;
+}
+
+.w-40 {
+  width: 10rem;
+}
+
+.w-48 {
+  width: 12rem;
+}
+
+.w-5 {
+  width: 1.25rem;
+}
+
+.w-6 {
+  width: 1.5rem;
+}
+
+.w-8 {
+  width: 2rem;
 }
 
 .w-full {
@@ -1100,20 +1761,44 @@ video {
   width: 100vw;
 }
 
-.w-3 {
-  width: 0.75rem;
+.w-20 {
+  width: 5rem;
 }
 
-.w-5 {
-  width: 1.25rem;
+.w-4 {
+  width: 1rem;
+}
+
+.max-w-3xl {
+  max-width: 48rem;
 }
 
 .max-w-6xl {
   max-width: 72rem;
 }
 
+.max-w-7xl {
+  max-width: 80rem;
+}
+
 .max-w-\[80\%\] {
   max-width: 80%;
+}
+
+.max-w-lg {
+  max-width: 32rem;
+}
+
+.max-w-screen-xl {
+  max-width: 1280px;
+}
+
+.max-w-2xl {
+  max-width: 42rem;
+}
+
+.max-w-\[calc\(50\%-0\.5rem\)\] {
+  max-width: calc(50% - 0.5rem);
 }
 
 .flex-1 {
@@ -1124,6 +1809,32 @@ video {
   flex-shrink: 0;
 }
 
+.flex-grow {
+  flex-grow: 1;
+}
+
+.basis-1\/2 {
+  flex-basis: 50%;
+}
+
+.origin-top-right {
+  transform-origin: top right;
+}
+
+.-translate-x-1\/2 {
+  --tw-translate-x: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.-translate-y-1\/2 {
+  --tw-translate-y: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.transform {
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 @keyframes pulse {
   50% {
     opacity: .5;
@@ -1132,6 +1843,32 @@ video {
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.list-decimal {
+  list-style-type: decimal;
+}
+
+.list-disc {
+  list-style-type: disc;
 }
 
 .grid-cols-1 {
@@ -1146,12 +1883,20 @@ video {
   flex-direction: column;
 }
 
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
 .items-start {
   align-items: flex-start;
 }
 
 .items-center {
   align-items: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
 }
 
 .justify-center {
@@ -1166,8 +1911,44 @@ video {
   gap: 0.625rem;
 }
 
+.gap-4 {
+  gap: 1rem;
+}
+
 .gap-6 {
   gap: 1.5rem;
+}
+
+.gap-8 {
+  gap: 2rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.space-x-1 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.25rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.25rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+}
+
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
 }
 
 .space-y-4 > :not([hidden]) ~ :not([hidden]) {
@@ -1176,10 +1957,14 @@ video {
   margin-bottom: calc(1rem * var(--tw-space-y-reverse));
 }
 
-.space-x-2 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-x-reverse: 0;
-  margin-right: calc(0.5rem * var(--tw-space-x-reverse));
-  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+}
+
+.overflow-auto {
+  overflow: auto;
 }
 
 .overflow-hidden {
@@ -1190,12 +1975,26 @@ video {
   overflow-y: auto;
 }
 
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+
 .rounded-full {
   border-radius: 9999px;
 }
 
 .rounded-lg {
   border-radius: 0.5rem;
+}
+
+.rounded-md {
+  border-radius: 0.375rem;
 }
 
 .rounded-l-lg {
@@ -1208,20 +2007,93 @@ video {
   border-bottom-right-radius: 0.5rem;
 }
 
+.rounded-t-lg {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
 .border {
   border-width: 1px;
+}
+
+.border-2 {
+  border-width: 2px;
+}
+
+.border-4 {
+  border-width: 4px;
 }
 
 .border-b {
   border-bottom-width: 1px;
 }
 
+.border-b-2 {
+  border-bottom-width: 2px;
+}
+
+.border-l-4 {
+  border-left-width: 4px;
+}
+
 .border-t {
   border-top-width: 1px;
 }
 
-.border-r {
-  border-right-width: 1px;
+.border-t-4 {
+  border-top-width: 4px;
+}
+
+.border-dashed {
+  border-style: dashed;
+}
+
+.border-blue-500 {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+
+.border-gray-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
+}
+
+.border-gray-300 {
+  --tw-border-opacity: 1;
+  border-color: rgb(209 213 219 / var(--tw-border-opacity, 1));
+}
+
+.border-red-500 {
+  --tw-border-opacity: 1;
+  border-color: rgb(239 68 68 / var(--tw-border-opacity, 1));
+}
+
+.border-transparent {
+  border-color: transparent;
+}
+
+.border-blue-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(191 219 254 / var(--tw-border-opacity, 1));
+}
+
+.border-t-blue-500 {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+
+.border-l-red-500 {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(239 68 68 / var(--tw-border-opacity, 1));
+}
+
+.border-t-transparent {
+  border-top-color: transparent;
+}
+
+.bg-blue-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1));
 }
 
 .bg-blue-200 {
@@ -1229,9 +2101,29 @@ video {
   background-color: rgb(191 219 254 / var(--tw-bg-opacity, 1));
 }
 
+.bg-blue-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(96 165 250 / var(--tw-bg-opacity, 1));
+}
+
+.bg-blue-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1));
+}
+
 .bg-blue-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));
+}
+
+.bg-blue-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
+}
+
+.bg-gray-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
 }
 
 .bg-gray-200 {
@@ -1244,14 +2136,34 @@ video {
   background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
 }
 
+.bg-gray-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(75 85 99 / var(--tw-bg-opacity, 1));
+}
+
+.bg-green-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 197 94 / var(--tw-bg-opacity, 1));
+}
+
+.bg-green-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(22 163 74 / var(--tw-bg-opacity, 1));
+}
+
+.bg-indigo-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(79 70 229 / var(--tw-bg-opacity, 1));
+}
+
 .bg-pink-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(236 72 153 / var(--tw-bg-opacity, 1));
 }
 
-.bg-white {
+.bg-red-100 {
   --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+  background-color: rgb(254 226 226 / var(--tw-bg-opacity, 1));
 }
 
 .bg-red-500 {
@@ -1264,22 +2176,45 @@ video {
   background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
 }
 
+.bg-stone-800 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(41 37 36 / var(--tw-bg-opacity, 1));
+}
+
+.bg-stone-800\/95 {
+  background-color: rgb(41 37 36 / 0.95);
+}
+
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-black {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+}
+
+.bg-opacity-50 {
+  --tw-bg-opacity: 0.5;
+}
+
 .bg-\[url\(\'\.\/assets\/bg\.png\'\)\] {
   background-image: url('./assets/bg.png');
 }
 
-.bg-gradient-to-t {
-  background-image: linear-gradient(to top, var(--tw-gradient-stops));
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
 }
 
-.from-black\/50 {
-  --tw-gradient-from: rgb(0 0 0 / 0.5) var(--tw-gradient-from-position);
-  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position);
+.from-gray-900 {
+  --tw-gradient-from: #111827 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(17 24 39 / 0) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
-.to-transparent {
-  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+.to-gray-700 {
+  --tw-gradient-to: #374151 var(--tw-gradient-to-position);
 }
 
 .bg-cover {
@@ -1299,6 +2234,10 @@ video {
   padding: 0.25rem;
 }
 
+.p-2 {
+  padding: 0.5rem;
+}
+
 .p-3 {
   padding: 0.75rem;
 }
@@ -1311,8 +2250,18 @@ video {
   padding: 1.5rem;
 }
 
-.p-2 {
-  padding: 0.5rem;
+.p-8 {
+  padding: 2rem;
+}
+
+.px-1 {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .px-3 {
@@ -1330,13 +2279,107 @@ video {
   padding-right: 1.5rem;
 }
 
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
 .py-2 {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
 
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.pb-3 {
+  padding-bottom: 0.75rem;
+}
+
+.pb-6 {
+  padding-bottom: 1.5rem;
+}
+
+.pl-3 {
+  padding-left: 0.75rem;
+}
+
+.pr-4 {
+  padding-right: 1rem;
+}
+
+.pt-1 {
+  padding-top: 0.25rem;
+}
+
+.pt-16 {
+  padding-top: 4rem;
+}
+
+.pt-2 {
+  padding-top: 0.5rem;
+}
+
+.pt-4 {
+  padding-top: 1rem;
+}
+
+.pt-5 {
+  padding-top: 1.25rem;
+}
+
+.pl-5 {
+  padding-left: 1.25rem;
+}
+
+.text-left {
+  text-align: left;
+}
+
 .text-center {
   text-align: center;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+
+.text-9xl {
+  font-size: 8rem;
+  line-height: 1;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 .text-lg {
@@ -1349,9 +2392,22 @@ video {
   line-height: 1.25rem;
 }
 
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-extrabold {
+  font-weight: 800;
 }
 
 .font-medium {
@@ -1366,6 +2422,45 @@ video {
   text-transform: capitalize;
 }
 
+.italic {
+  font-style: italic;
+}
+
+.text-blue-500 {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
+}
+
+.text-blue-700 {
+  --tw-text-opacity: 1;
+  color: rgb(29 78 216 / var(--tw-text-opacity, 1));
+}
+
+.text-blue-800 {
+  --tw-text-opacity: 1;
+  color: rgb(30 64 175 / var(--tw-text-opacity, 1));
+}
+
+.text-gray-300 {
+  --tw-text-opacity: 1;
+  color: rgb(209 213 219 / var(--tw-text-opacity, 1));
+}
+
+.text-gray-400 {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity, 1));
+}
+
+.text-gray-500 {
+  --tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--tw-text-opacity, 1));
+}
+
+.text-gray-600 {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+}
+
 .text-gray-700 {
   --tw-text-opacity: 1;
   color: rgb(55 65 81 / var(--tw-text-opacity, 1));
@@ -1376,28 +2471,48 @@ video {
   color: rgb(31 41 55 / var(--tw-text-opacity, 1));
 }
 
-.text-white {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-}
-
-.text-blue-500 {
-  --tw-text-opacity: 1;
-  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
-}
-
-.text-gray-500 {
-  --tw-text-opacity: 1;
-  color: rgb(107 114 128 / var(--tw-text-opacity, 1));
-}
-
 .text-red-500 {
   --tw-text-opacity: 1;
   color: rgb(239 68 68 / var(--tw-text-opacity, 1));
 }
 
+.text-red-700 {
+  --tw-text-opacity: 1;
+  color: rgb(185 28 28 / var(--tw-text-opacity, 1));
+}
+
+.text-stone-100 {
+  --tw-text-opacity: 1;
+  color: rgb(245 245 244 / var(--tw-text-opacity, 1));
+}
+
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+
 .opacity-60 {
   opacity: 0.6;
+}
+
+.opacity-25 {
+  opacity: 0.25;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
+
+.shadow {
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
 .shadow-md {
@@ -1406,8 +2521,54 @@ video {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-sm {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.ring-1 {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.ring-black {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(0 0 0 / var(--tw-ring-opacity, 1));
+}
+
+.ring-opacity-5 {
+  --tw-ring-opacity: 0.05;
+}
+
+.drop-shadow-lg {
+  --tw-drop-shadow: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
 .filter {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.backdrop-blur-md {
+  --tw-backdrop-blur: blur(12px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+
+.backdrop-blur-sm {
+  --tw-backdrop-blur: blur(4px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+
+.transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 
 .transition-all {
@@ -1422,13 +2583,38 @@ video {
   transition-duration: 150ms;
 }
 
+.transition-shadow {
+  transition-property: box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
 .duration-200 {
   transition-duration: 200ms;
+}
+
+.duration-300 {
+  transition-duration: 300ms;
+}
+
+.hover\:-translate-y-1:hover {
+  --tw-translate-y: -0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.hover\:border-gray-300:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(209 213 219 / var(--tw-border-opacity, 1));
 }
 
 .hover\:bg-blue-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-blue-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(29 78 216 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:bg-gray-100:hover {
@@ -1441,9 +2627,44 @@ video {
   background-color: rgb(209 213 219 / var(--tw-bg-opacity, 1));
 }
 
+.hover\:bg-gray-50:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-gray-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(55 65 81 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-green-600:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(22 163 74 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-green-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(21 128 61 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-indigo-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(67 56 202 / var(--tw-bg-opacity, 1));
+}
+
 .hover\:bg-red-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-stone-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(68 64 60 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-blue-50:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:text-gray-700:hover {
@@ -1451,9 +2672,53 @@ video {
   color: rgb(55 65 81 / var(--tw-text-opacity, 1));
 }
 
+.hover\:text-gray-800:hover {
+  --tw-text-opacity: 1;
+  color: rgb(31 41 55 / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-orange-200:hover {
+  --tw-text-opacity: 1;
+  color: rgb(254 215 170 / var(--tw-text-opacity, 1));
+}
+
+.hover\:shadow-lg:hover {
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.hover\:shadow-xl:hover {
+  --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.hover\:shadow-md:hover {
+  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.focus\:border-blue-300:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(147 197 253 / var(--tw-border-opacity, 1));
+}
+
+.focus\:border-indigo-500:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(99 102 241 / var(--tw-border-opacity, 1));
+}
+
 .focus\:outline-none:focus {
   outline: 2px solid transparent;
   outline-offset: 2px;
+}
+
+.focus\:ring:focus {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
 
 .focus\:ring-2:focus {
@@ -1462,9 +2727,26 @@ video {
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
 
+.focus\:ring-inset:focus {
+  --tw-ring-inset: inset;
+}
+
 .focus\:ring-blue-500:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(59 130 246 / var(--tw-ring-opacity, 1));
+}
+
+.focus\:ring-indigo-500:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(99 102 241 / var(--tw-ring-opacity, 1));
+}
+
+.focus\:ring-offset-2:focus {
+  --tw-ring-offset-width: 2px;
+}
+
+.disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
 }
 
 .disabled\:bg-blue-300:disabled {
@@ -1472,9 +2754,103 @@ video {
   background-color: rgb(147 197 253 / var(--tw-bg-opacity, 1));
 }
 
+.disabled\:bg-gray-400:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(156 163 175 / var(--tw-bg-opacity, 1));
+}
+
+@media (min-width: 640px) {
+  .sm\:ml-6 {
+    margin-left: 1.5rem;
+  }
+
+  .sm\:flex {
+    display: flex;
+  }
+
+  .sm\:hidden {
+    display: none;
+  }
+
+  .sm\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sm\:flex-row {
+    flex-direction: row;
+  }
+
+  .sm\:space-x-8 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(2rem * var(--tw-space-x-reverse));
+    margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
+  }
+
+  .sm\:px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
 @media (min-width: 768px) {
+  .md\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
+  .md\:mt-0 {
+    margin-top: 0px;
+  }
+
+  .md\:block {
+    display: block;
+  }
+
+  .md\:flex {
+    display: flex;
+  }
+
+  .md\:w-auto {
+    width: auto;
+  }
+
   .md\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .md\:flex-row {
+    flex-direction: row;
+  }
+
+  .md\:items-center {
+    align-items: center;
+  }
+
+  .md\:justify-between {
+    justify-content: space-between;
+  }
+
+  .md\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lg\:px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
 }
 
@@ -1482,7 +2858,6 @@ video {
 File: src/router/index.js
 ================
 import { createRouter, createWebHistory } from 'vue-router'
-import AvatarView from '../views/AvatarView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -1490,7 +2865,32 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: AvatarView,
+      component: () => import('../views/AvatarView.vue'),
+    },
+    {
+      path: '/about',
+      name: 'about',
+      component: () => import('../views/AboutView.vue'),
+    },
+    {
+      path: '/therapist',
+      name: 'therapist',
+      component: () => import('../views/TherapistView.vue'),
+    },
+    {
+      path: '/therapist-dashboard',
+      name: 'therapistDashboard',
+      component: () => import('../views/TherapistDashboardView.vue'),
+    },
+    {
+      path: '/transcribe',
+      name: 'transcribe',
+      component: () => import('../views/TranscribeView.vue'),
+    },
+    {
+      path: '/mentalHealthScreen',
+      name: 'mentalHealthScreen',
+      component: () => import('../views/MentalHealthScreenView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
@@ -1517,6 +2917,47 @@ export const useCounterStore = defineStore('counter', () => {
 
   return { count, doubleCount, increment }
 })
+
+================
+File: src/views/AboutView.vue
+================
+<template>
+  <div class="min-h-screen flex mt-5 justify-center content-fit">
+    <div class="max-w-3xl bg-white shadow-md rounded-lg p-8">
+      <h1 class="text-4xl font-bold text-gray-800 mb-6">About Our AI Therapy App</h1>
+      <p class="text-gray-600 mb-4">
+        Our innovative AI therapy app is designed to break the stigma surrounding mental health. For
+        those who may feel hesitant about in-person visits, our AI provides a confidential,
+        accessible way to get a free screening and initial assessment.
+      </p>
+      <p class="text-gray-600 mb-4">
+        By leveraging cutting-edge technology, the AI acts as a preliminary therapist to help you
+        understand your condition and guide you towards the support you need—all from the comfort of
+        your home.
+      </p>
+      <p class="text-gray-600 mb-4">
+        For professional therapists, our app offers an effective tool to record and organize
+        conversations with patients. This allows for easier recall of important details, ensuring
+        that you can deliver the best possible treatment.
+      </p>
+      <p class="text-gray-600">
+        Whether you're seeking a discreet initial assessment or a powerful tool to enhance your
+        therapeutic practice, our app bridges the gap between technology and compassionate mental
+        health care.
+      </p>
+    </div>
+  </div>
+</template>
+  
+  <script>
+export default {
+  name: 'AboutView',
+}
+</script>
+  
+  <style scoped>
+/* You can add custom styles here if needed */
+</style>
 
 ================
 File: src/views/AvatarView.vue
@@ -1551,26 +2992,13 @@ File: src/views/AvatarView.vue
             </div>
           </div>
 
-          <!-- Full Image Avatar -->
-          <div class="flex-1 relative overflow-hidden rounded-lg">
+          <!-- Static Avatar Image -->
+          <div class="flex-1 relative overflow-hidden rounded-lg h-[400px]">
             <img
-              v-if="gender === 'male'"
-              src="../assets/male.png"
-              alt="Male Avatar"
+              :src="staticImage[gender]"
+              :alt="`${gender} therapist`"
               class="w-full h-full object-cover"
             />
-            <div v-else class="h-[400px] overflow-hidden">
-              <img
-                src="../assets/female.png"
-                alt="Female Avatar"
-                class="w-full object-cover"
-              />
-            </div>
-            <div
-              class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3"
-            >
-              <p class="text-white text-center font-medium capitalize">{{ gender }} Avatar</p>
-            </div>
           </div>
         </div>
 
@@ -1579,7 +3007,7 @@ File: src/views/AvatarView.vue
           <!-- Chat Header with Voice Settings -->
           <div class="p-4 border-b flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-800">
-              Chat with {{ gender === 'male' ? 'John' : 'Jane' }}
+              Chat with your AI therapist {{ gender === 'male' ? 'John' : 'Jane' }}!
             </h2>
             <div class="flex items-center space-x-2">
               <button
@@ -1606,14 +3034,13 @@ File: src/views/AvatarView.vue
             </div>
           </div>
 
-          <!-- Chat Messages - Fixed height with overflow -->
+          <!-- Chat Messages -->
           <div
             class="flex-1 p-4 overflow-y-auto bg-gray-50"
             ref="messagesContainer"
             style="max-height: calc(500px - 130px)"
           >
             <div class="space-y-4">
-              <!-- Actual Messages -->
               <div
                 v-for="(message, index) in messages"
                 :key="index"
@@ -1639,7 +3066,6 @@ File: src/views/AvatarView.vue
                   >
                     {{ message.text }}
                   </p>
-
                   <!-- Play button for AI messages -->
                   <button
                     v-if="message.sender === 'assistant'"
@@ -1724,21 +3150,56 @@ File: src/views/AvatarView.vue
                 </svg>
               </button>
             </div>
-            <!-- Voice recognition status -->
             <div v-if="isListening" class="mt-2 text-sm text-center text-red-500 animate-pulse">
               Listening... Say something or click the mic to stop
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Counter Button Section -->
+      <div class="mt-6 text-center">
+        <button
+          @click="redirectToAssessment"
+          :disabled="userPromptCount < requiredPrompts"
+          :class="[
+            'py-3 px-6 rounded-lg font-medium text-white transition-all duration-200 w-full md:w-auto',
+            userPromptCount >= requiredPrompts 
+              ? 'bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
+              : 'bg-blue-400 cursor-not-allowed'
+          ]"
+        >
+          <span v-if="userPromptCount < requiredPrompts">
+            {{ requiredPrompts - userPromptCount }} more prompts to get your mental health assessment
+          </span>
+          <span v-else class="flex items-center justify-center">
+            Click here to get the right help!
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
   
 <script setup>
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import maleNeutral from '../assets/neutral_male.png'
+import femaleNeutral from '../assets/neutral_female.png'
+import { ref, watch, nextTick, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
+const router = useRouter()
+
+// Use only the static (neutral) image for each gender
+const staticImage = {
+  male: maleNeutral,
+  female: femaleNeutral
+}
+
+// Modified/added code for persistence
 const gender = ref('female')
 const newMessage = ref('')
 const messages = ref([
@@ -1755,12 +3216,49 @@ const voiceResponseEnabled = ref(false)
 const speechSynthesis = window.speechSynthesis
 let currentUtterance = null
 
+// Prompt counter functionality
+const userPromptCount = ref(0)
+const requiredPrompts = 10
+
+// Save chat state to localStorage
+const saveChatState = () => {
+  const chatState = {
+    messages: messages.value,
+    gender: gender.value,
+    userPromptCount: userPromptCount.value,
+    voiceResponseEnabled: voiceResponseEnabled.value
+  }
+  localStorage.setItem('chatState', JSON.stringify(chatState))
+}
+
+// Watch for changes in the state that should be persisted
+watch([messages, gender, userPromptCount, voiceResponseEnabled], () => {
+  saveChatState()
+}, { deep: true })
+
+// Computed property for conversation history
+const conversationHistory = computed(() => {
+  return messages.value
+    .map(message => `${message.sender === 'user' ? 'Me' : 'AI'}: ${message.text}`)
+    .join('\n\n')
+})
+
+// Function to redirect to mental health assessment
+const redirectToAssessment = () => {
+  if (userPromptCount.value >= requiredPrompts) {
+    // Store conversation history in localStorage to access it from the assessment page
+    localStorage.setItem('conversationHistory', conversationHistory.value)
+    // Navigate to the assessment page
+    router.push('/mentalhealthscreen')
+  }
+}
+
 // Initialize speech recognition
 const initSpeechRecognition = () => {
   if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     recognition.value = new SpeechRecognition()
-    recognition.value.continuous = true // Changed to true to keep listening
+    recognition.value.continuous = true
     recognition.value.interimResults = false
     recognition.value.lang = 'en-US'
 
@@ -1768,25 +3266,16 @@ const initSpeechRecognition = () => {
       const last = event.results.length - 1
       const transcript = event.results[last][0].transcript
       newMessage.value = transcript
-
-      // Don't auto-send the message - wait for user to click send or stop
-      // This fixes the premature ending
     }
 
     recognition.value.onerror = (event) => {
       console.error('Speech recognition error', event.error)
-
-      // Only stop listening on actual errors, not "no-speech" which is a normal state
       if (event.error !== 'no-speech') {
         isListening.value = false
       }
     }
 
     recognition.value.onend = () => {
-      // Don't automatically set isListening to false here
-      // Only set it when user explicitly stops or when there's an error
-
-      // If we're still supposed to be listening, restart
       if (isListening.value) {
         try {
           recognition.value.start()
@@ -1801,7 +3290,6 @@ const initSpeechRecognition = () => {
   }
 }
 
-// Toggle speech recognition on/off
 const toggleListening = () => {
   if (!recognition.value) {
     initSpeechRecognition()
@@ -1815,8 +3303,6 @@ const toggleListening = () => {
   if (isListening.value) {
     recognition.value.stop()
     isListening.value = false
-
-    // When manually stopping, check if we have a message to send
     if (newMessage.value.trim()) {
       sendMessage()
     }
@@ -1830,49 +3316,44 @@ const toggleListening = () => {
   }
 }
 
-// Toggle voice response setting
 const toggleVoiceResponse = () => {
   voiceResponseEnabled.value = !voiceResponseEnabled.value
 }
 
-// Speak a message using text-to-speech
 const speakMessage = (text) => {
-  // Stop any current speech
   if (speechSynthesis.speaking) {
     speechSynthesis.cancel()
   }
 
   const utterance = new SpeechSynthesisUtterance(text)
-  // Set voice based on gender
   const voices = speechSynthesis.getVoices()
-
-  // Try to find appropriate voice
   if (voices.length > 0) {
-    // Filter for English voices
     const englishVoices = voices.filter((voice) => voice.lang.includes('en'))
-
     if (englishVoices.length > 0) {
-      // Try to find gender-appropriate voice
       let genderVoices = englishVoices.filter((voice) =>
         gender.value === 'female'
           ? voice.name.includes('Female') || voice.name.includes('female')
           : voice.name.includes('Male') || voice.name.includes('male')
       )
-
-      // If no gender-specific voice found, use any English voice
       utterance.voice = genderVoices.length > 0 ? genderVoices[0] : englishVoices[0]
     }
   }
 
-  // Adjust properties based on gender
   utterance.pitch = gender.value === 'female' ? 1.2 : 0.9
   utterance.rate = 1.0
+
+  utterance.onstart = () => {
+    // Optional: Add any start speaking actions
+  }
+  
+  utterance.onend = () => {
+    // Optional: Actions on end speaking
+  }
 
   currentUtterance = utterance
   speechSynthesis.speak(utterance)
 }
 
-// Function to scroll to bottom of messages
 const scrollToBottom = async () => {
   await nextTick()
   if (messagesContainer.value) {
@@ -1880,7 +3361,6 @@ const scrollToBottom = async () => {
   }
 }
 
-// Load voices as soon as possible
 const loadVoices = () => {
   return new Promise((resolve) => {
     const voices = speechSynthesis.getVoices()
@@ -1894,27 +3374,36 @@ const loadVoices = () => {
   })
 }
 
-// Ensure scroll works on initial load and get available voices
+// Modified onMounted to restore previous chat state
 onMounted(async () => {
+  // Try to restore previous chat state
+  const savedChatState = localStorage.getItem('chatState')
+  if (savedChatState) {
+    const parsedState = JSON.parse(savedChatState)
+    // Restore the chat state
+    messages.value = parsedState.messages
+    gender.value = parsedState.gender
+    userPromptCount.value = parsedState.userPromptCount
+    voiceResponseEnabled.value = parsedState.voiceResponseEnabled
+  }
+  
+  // Initialize other components
   scrollToBottom()
   initSpeechRecognition()
-
-  // Load voices
   await loadVoices()
 })
 
-// Clean up on component unmount
+// Add a cleanup function for component unmounting that keeps the chat state
 onUnmounted(() => {
   if (speechSynthesis.speaking) {
     speechSynthesis.cancel()
   }
-
   if (recognition.value && isListening.value) {
     recognition.value.stop()
   }
+  // Note: We're not clearing the chat state here
 })
 
-// Watch for changes in messages to scroll to bottom
 watch(
   messages,
   () => {
@@ -1923,69 +3412,42 @@ watch(
   { deep: true }
 )
 
-// Function to send message to OpenAI API
 const sendMessage = async () => {
   if (!newMessage.value.trim() || isLoading.value) return
 
-  // Add user message to chat
   const userMessage = newMessage.value.trim()
   messages.value.push({
     sender: 'user',
     text: userMessage,
   })
 
-  // Clear input
-  newMessage.value = ''
+  // Increment the prompt counter when user sends a message
+  userPromptCount.value++
 
-  // Set loading state
+  newMessage.value = ''
   isLoading.value = true
 
   try {
-    // Make API call to OpenAI
     const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      'http://127.0.0.1:5000/chat',
       {
-        model: 'gpt-4o-mini', // or your preferred model
-        messages: [
-          {
-            role: 'system',
-            content: `You are a helpful and caring therapist named ${
-              gender.value === 'male' ? 'John' : 'Jane'
-            }. Keep responses conversational and friendly and reply negative statements with positive affirmations.`,
-          },
-          ...messages.value.map((msg) => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text,
-          })),
-        ],
-        max_tokens: 1000,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-        },
+        message: userMessage
       }
     )
 
-    // Get AI response
-    const responseText = response.data.choices[0].message.content
+    const responseText = response.data["doctor_response"]
 
-    // Add AI response to chat
     messages.value.push({
       sender: 'assistant',
       text: responseText,
     })
 
-    // Speak the response if voice is enabled
     if (voiceResponseEnabled.value) {
       await nextTick()
       speakMessage(responseText)
     }
   } catch (error) {
     console.error('Error calling OpenAI API:', error)
-
-    // Add error message
     messages.value.push({
       sender: 'assistant',
       text: 'Sorry, I encountered an error. Please try again later.',
@@ -1995,23 +3457,16 @@ const sendMessage = async () => {
   }
 }
 
-// Update avatar response when gender changes
 watch(gender, () => {
-  // Stop any current speech when changing avatar
   if (speechSynthesis.speaking) {
     speechSynthesis.cancel()
   }
-
-  const responseText = `I'm now ${
-    gender.value === 'male' ? 'John' : 'Jane'
-  }. How can I help you today?`
-
+  const responseText = `I'm now ${gender.value === 'male' ? 'John' : 'Jane'}. How can I help you today?`
   messages.value.push({
     sender: 'assistant',
     text: responseText,
   })
 
-  // Speak the response if voice is enabled
   if (voiceResponseEnabled.value) {
     setTimeout(() => speakMessage(responseText), 100)
   }
@@ -2019,21 +3474,17 @@ watch(gender, () => {
 </script>
   
 <style>
-/* Make sure chat container maintains fixed height with scrollable overflow */
+/* Ensure the chat container maintains a fixed height with scrollable overflow */
 .overflow-y-auto {
   overflow-y: auto;
   scrollbar-width: thin;
 }
-
-/* Optional styling for scrollbar */
 .overflow-y-auto::-webkit-scrollbar {
   width: 6px;
 }
-
 .overflow-y-auto::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
-
 .overflow-y-auto::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 3px;
@@ -2041,18 +3492,614 @@ watch(gender, () => {
 </style>
 
 ================
+File: src/views/Community.vue
+================
+<template>
+
+
+
+</template>
+
+
+<script>
+
+</script>
+
+<style scoped>
+</style>
+
+================
+File: src/views/DomainCard.vue
+================
+<template>
+  <div :class="['bg-white rounded-lg shadow overflow-hidden', clinicalClass]">
+    <!-- Card Header -->
+    <div class="bg-gray-100 p-4 flex justify-between items-center">
+      <h5 class="mb-0 font-semibold">{{ domain.name }}</h5>
+      <span
+        class="px-2 py-1 text-xs font-semibold rounded text-white"
+        :style="{ backgroundColor: domain.severity_color }"
+      >
+        {{ domain.severity }}
+      </span>
+    </div>
+
+    <!-- Card Body -->
+    <div class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Chart Section -->
+        <div>
+          <div class="relative h-40 w-40 mx-auto">
+            <canvas :id="chartId" ref="chartCanvas"></canvas>
+            <div
+              class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl font-bold"
+            >
+              {{ domain.risk_percentage }}%
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions & Evidence -->
+        <div>
+          <h6 class="mb-3 font-semibold">Question Scores</h6>
+          <div>
+            <div v-for="(question, qIndex) in domain.questions" :key="qIndex" class="mb-4">
+              <div class="flex items-center text-sm mb-1">
+                <span
+                  class="inline-block w-6 h-6 flex items-center justify-center rounded-full text-white text-xs mr-2"
+                  :style="{ backgroundColor: scoreColor(getScore(qIndex)) }"
+                >
+                  {{ getScore(qIndex) }}
+                </span>
+                <span>{{ question }}</span>
+              </div>
+              <div
+                v-if="getScore(qIndex) > 0"
+                class="mt-2 p-2 bg-gray-100 rounded italic text-sm text-gray-600"
+              >
+                {{ domain.evidence[qIndex] || 'No evidence provided for this question.' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+  
+  <script setup>
+import { onMounted, ref, computed } from 'vue'
+import Chart from 'chart.js/auto'
+
+const props = defineProps({
+  domain: {
+    type: Object,
+    required: true,
+  },
+  chartId: {
+    type: String,
+    required: true,
+  },
+})
+
+const chartCanvas = ref(null)
+
+// If the domain is a clinical concern, add a red left border.
+const clinicalClass = computed(() =>
+  props.domain.clinical_concern ? 'border-l-4 border-red-500' : ''
+)
+
+const getScore = (index) => {
+  return props.domain.scores && props.domain.scores[index] !== undefined
+    ? props.domain.scores[index]
+    : 0
+}
+
+const scoreColor = (score) => {
+  if (score === 0) return '#6c757d'
+  if (score === 1) return '#17a2b8'
+  if (score === 2) return '#ffc107'
+  if (score === 3) return '#fd7e14'
+  return '#dc3545'
+}
+
+const createChart = () => {
+  const ctx = chartCanvas.value.getContext('2d')
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [
+        {
+          data: [props.domain.risk_percentage, 100 - props.domain.risk_percentage],
+          backgroundColor: [props.domain.domain_color, '#f2f2f2'],
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      cutout: '70%',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+      },
+    },
+  })
+}
+
+onMounted(() => {
+  createChart()
+})
+</script>
+
+================
+File: src/views/MentalHealthScreenView.vue
+================
+<template>
+  <div class="max-w-screen-xl mx-auto p-4">
+    <!-- Assessment Form (shown before analysis) -->
+    <div v-if="!analysisCompleted" class="bg-white rounded-lg p-8 shadow mb-8">
+      <h1 class="text-center text-2xl font-bold mb-4">Your Mental Health Check-In</h1>
+      <form @submit.prevent="analyzeText">
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-2">
+            Share your thoughts or feelings below to identify potential mental health concerns:
+          </label>
+          <textarea
+            v-model="text"
+            rows="8"
+            placeholder="Enter your journal entries, thoughts, or any text that describes how you've been feeling lately..."
+            class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:border-blue-300"
+          ></textarea>
+        </div>
+        <div>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white rounded-full py-3 font-medium hover:bg-blue-700 transition"
+            ref="analyzeButton"
+          >
+            Analyze My Text
+          </button>
+        </div>
+      </form>
+      <div class="text-sm text-gray-600 italic mt-3">
+        <strong>Note:</strong> This tool is for informational purposes only and does not provide
+        medical advice or diagnosis. Please consult with a qualified healthcare provider regarding
+        any mental health concerns.
+      </div>
+    </div>
+
+    <!-- Loader -->
+    <div v-if="analyzing" class="flex justify-center">
+      <div
+        class="w-12 h-12 border-4 border-gray-300 border-t-4 border-t-blue-500 rounded-full animate-spin"
+      ></div>
+    </div>
+
+    <!-- Results Section -->
+    <div v-if="analysisCompleted" class="bg-white rounded-lg p-8 shadow mt-8">
+      <!-- Header Banner -->
+      <div class="bg-blue-600 text-white text-center rounded-t-lg p-6 mb-6">
+        <h2 class="text-xl font-bold">Your Mental Health Assessment Results</h2>
+      </div>
+
+      <!-- Analysis Summary -->
+      <div class="bg-white shadow rounded-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold mb-3">Summary of Your Results</h3>
+        <p class="mb-4">Based on your text, the following significant areas may need attention:</p>
+        <div v-if="significantConcerns.length === 0" class="bg-gray-100 p-4 rounded text-center">
+          <p>No significant areas of concern were identified in your text.</p>
+        </div>
+        <div class="bg-blue-100 text-blue-800 p-4 rounded" role="alert">
+          <p class="mb-0">
+            <strong>Important:</strong> This is not a clinical diagnosis. If you're experiencing
+            distress or have concerns about your mental health, please consult with a healthcare
+            professional.
+          </p>
+        </div>
+      </div>
+
+      <!-- Domain Results - Main Concerns -->
+      <h3 class="text-lg font-semibold mb-3">Detailed Analysis</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <DomainCard
+          v-for="(domain, index) in mainConcerns"
+          :key="index"
+          :domain="domain"
+          :chart-id="'chart-' + index"
+        />
+      </div>
+
+      <!-- Toggle for Other Domains -->
+      <div
+        v-if="otherDomains.length"
+        class="bg-white p-4 rounded border border-gray-300 mb-8 cursor-pointer hover:bg-gray-100 text-center"
+        @click="toggleOtherDomains"
+      >
+        <h5 class="mb-0">
+          {{
+            showOtherDomains
+              ? '- Hide areas with lower ratings'
+              : '+ View ' + otherDomains.length + ' other mental health areas with lower ratings'
+          }}
+        </h5>
+      </div>
+
+      <!-- Domain Results - Other Domains -->
+      <div v-if="showOtherDomains" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <DomainCard
+          v-for="(domain, index) in otherDomains"
+          :key="index"
+          :domain="domain"
+          :chart-id="'other-chart-' + index"
+        />
+      </div>
+
+      <div class="text-center mt-4 mb-3">
+        <button
+          @click="resetAssessment"
+          class="w-full bg-blue-600 text-white rounded-full py-3 font-medium hover:bg-blue-700 transition"
+        >
+          Start a New Assessment
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+  
+<script setup>
+import { ref, computed, onMounted, nextTick } from 'vue'
+import axios from 'axios'
+import DomainCard from './DomainCard.vue'
+
+const text = ref('')
+const analyzing = ref(false)
+const analysisCompleted = ref(false)
+const domains = ref([])
+const showOtherDomains = ref(false)
+const analyzeButton = ref(null)
+
+// A domain is considered a significant (main) concern if:
+// - clinical_concern is true,
+// - severity is not "Mild", and
+// - risk_percentage is greater than 25.
+const mainConcerns = computed(() =>
+  domains.value.filter((d) => d.clinical_concern && d.severity !== 'Mild' && d.risk_percentage > 25)
+)
+
+const otherDomains = computed(() =>
+  domains.value.filter(
+    (d) => !(d.clinical_concern && d.severity !== 'Mild' && d.risk_percentage > 25)
+  )
+)
+
+const significantConcerns = computed(() => mainConcerns.value)
+
+const analyzeText = async () => {
+  if (!text.value.trim()) {
+    alert('Please enter some text to analyze.')
+    return
+  }
+  analyzing.value = true
+  try {
+    const response = await axios.post('http://127.0.0.1:5001/analyze', { text: text.value })
+    domains.value = response.data.domains
+    analysisCompleted.value = true
+    
+    // Save the analysis results to localStorage
+    saveAnalysisToLocalStorage()
+  } catch (error) {
+    console.error('Error:', error)
+    alert('An error occurred during analysis. Please try again.')
+  } finally {
+    analyzing.value = false
+  }
+}
+
+const toggleOtherDomains = () => {
+  showOtherDomains.value = !showOtherDomains.value
+  
+  // Save the toggle state to localStorage
+  localStorage.setItem('showOtherDomains', JSON.stringify(showOtherDomains.value))
+}
+
+const resetAssessment = () => {
+  text.value = ''
+  analysisCompleted.value = false
+  domains.value = []
+  showOtherDomains.value = false
+  
+  // Clear the saved analysis from localStorage
+  localStorage.removeItem('analysisResults')
+  localStorage.removeItem('showOtherDomains')
+  localStorage.removeItem('analysisCompleted')
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Function to save analysis results to localStorage
+const saveAnalysisToLocalStorage = () => {
+  localStorage.setItem('analysisResults', JSON.stringify(domains.value))
+  localStorage.setItem('analysisCompleted', JSON.stringify(analysisCompleted.value))
+  localStorage.setItem('showOtherDomains', JSON.stringify(showOtherDomains.value))
+}
+
+// Load saved data from localStorage on mount
+onMounted(async () => {
+  // Try to load previous analysis results first
+  const savedAnalysis = localStorage.getItem('analysisResults')
+  const savedAnalysisCompleted = localStorage.getItem('analysisCompleted')
+  const savedShowOtherDomains = localStorage.getItem('showOtherDomains')
+  
+  if (savedAnalysis && savedAnalysisCompleted) {
+    // Restore previous analysis results
+    domains.value = JSON.parse(savedAnalysis)
+    analysisCompleted.value = JSON.parse(savedAnalysisCompleted)
+    if (savedShowOtherDomains) {
+      showOtherDomains.value = JSON.parse(savedShowOtherDomains)
+    }
+    
+    // No need to trigger a new analysis
+    return
+  }
+  
+  // If no previous analysis, try to load conversation history and analyze
+  const savedConversation = localStorage.getItem('conversationHistory')
+  if (savedConversation) {
+    text.value = savedConversation
+    
+    // Allow the DOM to update with the text value
+    await nextTick()
+    
+    // Auto-trigger the analysis after a short delay to ensure UI is ready
+    setTimeout(() => {
+      if (analyzeButton.value) {
+        analyzeButton.value.click()
+      }
+    }, 500)
+  }
+})
+</script>
+
+================
 File: src/views/NavbarView.vue
 ================
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
+  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-custom-beige/80 border-b border-custom-beige-dark/20 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <!-- Logo and Navigation Links -->
+        <div class="flex items-center">
+          <div class="flex-shrink-0 flex items-center">
+            <router-link to="/" class="text-xl font-bold text-custom-text">
+              YourLogo
+            </router-link>
+          </div>
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <router-link 
+              v-for="link in navLinks" 
+              :key="link.to" 
+              :to="link.to" 
+              class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+              :class="[
+                $route.path === link.to 
+                  ? 'border-blue-500 text-custom-text-dark' 
+                  : 'border-transparent text-custom-text hover:border-custom-beige-dark hover:text-custom-text-dark'
+              ]"
+            >
+              {{ link.text }}
+            </router-link>
+          </div>
+        </div>
+        
+        <!-- Authentication Section -->
+        <div class="flex items-center">
+          <!-- Not Logged In: Show Login Button -->
+          <button v-if="!isAuthenticated" @click="login" class="ml-4 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+            Login
+          </button>
+          
+          <!-- Logged In: Show User Profile -->
+          <div v-else class="ml-4 relative flex items-center">
+            <div class="relative">
+              <button @click="toggleUserMenu" class="flex items-center space-x-2 text-sm focus:outline-none">
+                <img :src="user.avatar" alt="User avatar" class="h-8 w-8 rounded-full object-cover border border-custom-beige-dark">
+                <span class="hidden md:block font-medium text-custom-text">{{ user.name }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-custom-text" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              
+              <!-- User Dropdown Menu -->
+              <div v-if="userMenuOpen" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <router-link 
+                  v-for="item in userMenuItems" 
+                  :key="item.to" 
+                  :to="item.to" 
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                >
+                  {{ item.text }}
+                </router-link>
+                <button @click="logout" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="flex items-center sm:hidden">
+          <button @click="toggleMobileMenu" class="inline-flex items-center justify-center p-2 rounded-md text-custom-text hover:text-custom-text-dark hover:bg-custom-beige-dark focus:outline-none focus:ring-2 focus:ring-inset focus:ring-custom-accent">
+            <span class="sr-only">Open main menu</span>
+            <svg v-if="!mobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile menu -->
+    <div v-if="mobileMenuOpen" class="sm:hidden bg-white">
+      <div class="pt-2 pb-3 space-y-1">
+        <router-link 
+          v-for="link in navLinks" 
+          :key="link.to" 
+          :to="link.to" 
+          class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+          :class="[
+            $route.path === link.to 
+              ? 'border-blue-500 text-blue-700 bg-blue-50' 
+              : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+          ]"
+        >
+          {{ link.text }}
+        </router-link>
+      </div>
+      
+      <!-- Mobile authentication section -->
+      <div v-if="isAuthenticated" class="pt-4 pb-3 border-t border-gray-200">
+        <div class="flex items-center px-4">
+          <div class="flex-shrink-0">
+            <img :src="user.avatar" alt="User avatar" class="h-10 w-10 rounded-full object-cover">
+          </div>
+          <div class="ml-3">
+            <div class="text-base font-medium text-gray-800">{{ user.name }}</div>
+            <div class="text-sm font-medium text-gray-500">{{ user.email }}</div>
+          </div>
+        </div>
+        <div class="mt-3 space-y-1">
+          <router-link 
+            v-for="item in userMenuItems" 
+            :key="item.to" 
+            :to="item.to" 
+            class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors duration-200"
+          >
+            {{ item.text }}
+          </router-link>
+          <button @click="logout" class="w-full text-left block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors duration-200">
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
   </nav>
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
+
+// Navigation links
+const navLinks = [
+  { to: '/', text: 'Home' },
+  { to: '/about', text: 'About' },
+  { to: '/therapist', text: 'Therapist' },
+  { to: '/therapist-dashboard', text: 'Dashboard' },
+  { to: '/transcribe', text: 'Transcribe' },
+  // { to: '/mentalHealthScreen', text: 'Mental Analysis' },
+]
+
+// User menu items
+const userMenuItems = [
+  { to: '/profile', text: 'Your Profile' },
+  { to: '/settings', text: 'Settings' },
+]
+
+// Authentication state
+const isAuthenticated = ref(false)
+const user = ref({
+  name: 'Depressed John',
+  email: 'jane@example.com',
+  avatar: 'https://i.pravatar.cc/150?img=5'
+})
+
+// Mobile menu state
+const mobileMenuOpen = ref(false)
+const userMenuOpen = ref(false)
+
+// Toggle mobile menu
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+  if (mobileMenuOpen.value) {
+    userMenuOpen.value = false
+  }
+}
+
+// Toggle user dropdown menu
+const toggleUserMenu = () => {
+  userMenuOpen.value = !userMenuOpen.value
+}
+
+// Close dropdown when clicking outside
+const closeDropdownOnClickOutside = (event) => {
+  if (userMenuOpen.value && !event.target.closest('.relative')) {
+    userMenuOpen.value = false
+  }
+}
+
+// Login function
+const login = () => {
+  // Simulate login - in a real app, this would call your auth service
+  isAuthenticated.value = true
+  userMenuOpen.value = false
+}
+
+// Logout function
+const logout = () => {
+  // Simulate logout - in a real app, this would call your auth service
+  isAuthenticated.value = false
+  userMenuOpen.value = false
+}
+
+// Add event listener for clicks outside the dropdown
+onMounted(() => {
+  document.addEventListener('click', closeDropdownOnClickOutside)
+})
+
+// Clean up event listener
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdownOnClickOutside)
+})
 </script>
+
+<style>
+@layer base {
+  :root {
+    --color-custom-beige: 224, 218, 212;
+    --color-custom-beige-dark: 200, 190, 180;
+    --color-custom-text: 60, 50, 40;
+    --color-custom-text-dark: 40, 30, 20;
+    --color-custom-accent: 180, 160, 140;
+    --color-custom-accent-dark: 160, 140, 120;
+  }
+}
+</style>
+
+================
+File: src/views/NotFound.vue
+================
+<template>
+  <div
+    class="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-gray-900 to-gray-700 text-white">
+    <h1 class="text-9xl font-extrabold text-red-500 drop-shadow-lg">404</h1>
+    <p class="text-2xl md:text-3xl font-semibold mt-4">Oops! Page Not Found</p>
+    <p class="text-lg text-gray-300 mt-2 max-w-lg text-center">
+      The page you're looking for doesn't exist or has been moved.
+    </p>
+    <router-link to="/"
+      class="mt-6 px-6 py-3 bg-blue-500 hover:bg-blue-600 transition duration-300 text-white font-semibold text-lg rounded-lg shadow-lg">
+      Go Back Home
+    </router-link>
+  </div>
+</template>
 
 ================
 File: src/views/NotFoundView.vue
@@ -2060,6 +4107,889 @@ File: src/views/NotFoundView.vue
 <template>
     <h1>Nothing here man</h1>
 </template>
+
+================
+File: src/views/ProfileView.vue
+================
+<template>
+
+</template>
+
+<script>
+</script>
+
+
+<style scoped>
+</style>
+
+================
+File: src/views/TherapistView.vue
+================
+<template>
+  <div class="max-w-screen-xl mx-auto p-6">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+      <div class="bg-blue-600 text-white p-4 rounded-t-lg">
+        <h2 class="text-xl font-bold">Therapist Dashboard</h2>
+      </div>
+      <div class="p-4">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center">
+          <div>
+            <h4 class="text-lg font-semibold">Patient Assessment Tools</h4>
+            <p class="text-gray-600">Review Level 1 screening results and conduct Level 2 assessments for specific domains.</p>
+          </div>
+          <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+            <button @click="showInstructions" class="px-4 py-2 border border-blue-500 text-blue-500 rounded hover:bg-blue-50 transition-colors">
+              View Instructions
+            </button>
+            <button @click="loadAssessmentFiles" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors">
+              Refresh Files
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div v-if="instructionsModalVisible" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center p-4 border-b">
+          <h5 class="text-lg font-semibold">Therapist Dashboard Instructions</h5>
+          <button @click="instructionsModalVisible = false" class="text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-4">
+          <h5 class="font-semibold mb-2">Using the Dashboard</h5>
+          <ol class="list-decimal pl-5 mb-4 space-y-2">
+            <li><strong>Select a Level 1 Assessment:</strong> Click on any file in the "Level 1 Assessment Results" section to view the patient's initial screening results.</li>
+            <li><strong>Review Domain Scores:</strong> The dashboard will display all domains with their risk percentages and severity levels.</li>
+            <li><strong>Select a Domain for Level 2 Assessment:</strong> Click on any domain card or use the dropdown menu to select a specific domain for deeper assessment.</li>
+            <li><strong>Select a Therapy Session:</strong> Choose a therapy session text file to analyze.</li>
+            <li><strong>Run the Assessment:</strong> Click the "Run Assessment" button to analyze the therapy session text using the appropriate Level 2 assessment tool.</li>
+            <li><strong>Review Results:</strong> The system will display detailed results of the Level 2 assessment, including scores, interpretation, and evidence from the text.</li>
+          </ol>
+          
+          <h5 class="font-semibold mb-2">About the Assessment Tools</h5>
+          <p class="mb-2">This dashboard uses validated clinical assessment tools for each domain:</p>
+          <ul class="list-disc pl-5 mb-4 space-y-1">
+            <li><strong>Depression:</strong> PHQ-9 (Patient Health Questionnaire-9)</li>
+            <li><strong>Anxiety:</strong> GAD-7 (Generalized Anxiety Disorder-7)</li>
+            <li><strong>Suicidal Ideation:</strong> C-SSRS (Columbia-Suicide Severity Rating Scale)</li>
+            <li><strong>Substance Use:</strong> ASSIST (Alcohol, Smoking and Substance Involvement Screening Test)</li>
+          </ul>
+          
+          <div class="bg-blue-50 p-3 rounded border border-blue-200">
+            <strong>Note:</strong> This tool is designed to assist clinical judgment, not replace it. All assessments should be interpreted within the context of your professional clinical evaluation.
+          </div>
+        </div>
+        <div class="p-4 border-t flex justify-end">
+          <button @click="instructionsModalVisible = false" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Selection -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+      <div class="p-4 border-b">
+        <h5 class="font-semibold">Level 1 Assessment Results</h5>
+      </div>
+      <div class="p-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2">
+            <div class="border rounded p-2 max-h-56 overflow-y-auto flex flex-wrap gap-2" id="assessmentFileList">
+              <div v-if="loadingFiles" class="w-full flex flex-col items-center justify-center py-4">
+                <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                <p class="mt-2">Loading files...</p>
+              </div>
+              <div v-else-if="assessmentFiles.length === 0" class="w-full flex items-center justify-center py-4">
+                <p class="text-gray-500">No assessment files found</p>
+              </div>
+              <div 
+                v-else
+                v-for="file in assessmentFiles" 
+                :key="file" 
+                @click="selectFile(file)"
+                :class="['p-3 border rounded cursor-pointer hover:bg-gray-50 transition-colors flex-grow basis-1/2 max-w-[calc(50%-0.5rem)]', 
+                  selectedFile === file ? 'border-blue-500 bg-blue-50' : 'border-gray-200']"
+              >
+                <div class="flex items-center">
+                  <span class="truncate">{{ formatFileName(file) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="bg-blue-50 p-3 rounded border border-blue-200 mb-3">
+              <h6 class="font-semibold mb-1">Instructions</h6>
+              <p class="text-sm">Select a Level 1 assessment file to view domain analysis</p>
+            </div>
+            <div v-if="selectedFile" class="border rounded p-3">
+              <h6 class="font-semibold mb-1">Patient Information</h6>
+              <p class="text-sm">Assessment from {{ formatFileDate(selectedFile) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Domain Selection -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+      <div class="p-4 border-b flex justify-between items-center">
+        <h5 class="font-semibold">Domain Overview</h5>
+      </div>
+      <div class="p-4">
+        <div class="mb-4">
+          <label for="domainSelect" class="block text-sm font-medium mb-2">Assessment Toolkits</label>
+          <select 
+            v-model="selectedDomain" 
+            @change="onDomainSelectChange"
+            class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            id="domainSelect"
+          >
+            <option value="">Select a domain for Level 2 assessment</option>
+            <optgroup v-if="highRiskDomains.length > 0" label="High Risk Domains">
+              <option v-for="domain in highRiskDomains" :key="domain.name" :value="domain.name">
+                {{ domain.name }} ({{ domain.risk_percentage }}%)
+              </option>
+            </optgroup>
+            <optgroup v-if="otherDomains.length > 0" label="Other Domains">
+              <option v-for="domain in otherDomains" :key="domain.name" :value="domain.name">
+                {{ domain.name }} ({{ domain.risk_percentage }}%)
+              </option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div v-if="!fileSelected" class="text-center py-5">
+          <p class="text-gray-500">Select a Level 1 assessment file to view domains</p>
+        </div>
+        <div v-else-if="loadingDomainData" class="text-center py-5">
+          <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+          <p class="mt-2">Loading domain data...</p>
+        </div>
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div 
+            v-for="domain in domainData" 
+            :key="domain.name" 
+            @click="selectDomain(domain.name)"
+            :class="['bg-white border rounded-lg shadow-sm overflow-hidden cursor-pointer transition transform hover:-translate-y-1 hover:shadow-md', 
+              selectedDomain === domain.name ? 'border-blue-500 shadow-md' : '',
+              domain.clinical_concern && domain.severity !== 'Mild' && domain.risk_percentage > 25 ? 'border-l-4 border-l-red-500' : '']"
+          >
+            <div class="flex justify-between items-center p-3 bg-gray-50 border-b">
+              <h6 class="font-semibold text-sm">{{ domain.name }}</h6>
+              <span 
+                class="px-2 py-1 text-xs font-semibold rounded text-white"
+                :style="{ backgroundColor: domain.severity_color || getSeverityColor(domain.severity) }"
+              >{{ domain.severity }}</span>
+            </div>
+            <div class="p-4">
+              <div class="flex items-center">
+                <div class="relative w-20 h-20 mr-4">
+                  <canvas :id="`chart-${domain.name.replace(/\s+/g, '-')}`" class="w-full h-full"></canvas>
+                  <div class="absolute inset-0 flex items-center justify-center font-bold">
+                    {{ domain.risk_percentage }}%
+                  </div>
+                </div>
+                <div>
+                  <p class="text-sm mb-1">Total Score: {{ domain.total }}</p>
+                  <p class="text-xs text-gray-500">Click to select for Level 2 assessment</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level 2 Assessment -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+      <div class="p-4 border-b">
+        <h5 class="font-semibold">Level 2 Assessment</h5>
+      </div>
+      <div class="p-4">
+        <div v-if="!selectedDomain" class="text-center py-5">
+          <p class="text-gray-500">Select a domain to perform a Level 2 assessment</p>
+        </div>
+
+        <!-- Assessment Form -->
+        <div v-else-if="!showAssessmentResults" class="space-y-6">
+          <h5 class="font-semibold">{{ selectedDomain }} Assessment</h5>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div class="mb-4">
+                <label for="sessionSelect" class="block text-sm font-medium mb-2">Select Therapy Session</label>
+                <select 
+                  v-model="selectedSession" 
+                  @change="onSessionSelectChange"
+                  class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="sessionSelect"
+                >
+                  <option value="">Select a therapy session</option>
+                  <option v-for="session in therapySessions" :key="session" :value="session">
+                    {{ formatSessionName(session) }}
+                  </option>
+                </select>
+              </div>
+
+              <div v-if="sessionPreview" class="border rounded p-4 bg-gray-50 max-h-48 overflow-y-auto">
+                <p class="font-medium mb-2">Preview:</p>
+                <p class="text-sm text-gray-700">{{ sessionPreview }}...</p>
+              </div>
+            </div>
+            
+            <div>
+              <div v-if="currentTool" class="bg-blue-50 p-4 rounded border border-blue-200 mb-4">
+                <h6 class="font-semibold mb-1">{{ currentTool.name }}</h6>
+                <p class="text-sm mb-3">{{ currentTool.description }}</p>
+                <p class="text-xs">This assessment contains {{ currentTool.questions.length }} questions. Select a therapy session to begin.</p>
+              </div>
+              
+              <div class="mt-4">
+                <button 
+                  @click="runAssessment" 
+                  :disabled="!selectedSession || assessmentLoading"
+                  class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
+                >
+                  <span v-if="assessmentLoading">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                  <span v-else>Run Assessment</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assessment Results -->
+        <div v-else-if="showAssessmentResults" class="space-y-6">
+          <div class="flex justify-between items-center">
+            <h5 class="font-semibold">{{ selectedDomain }} Assessment Results</h5>
+            <button 
+              @click="showAssessmentResults = false"
+              class="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm"
+            >
+              Back to Assessment
+            </button>
+          </div>
+          
+          <div 
+            class="p-4 rounded" 
+            :style="{ borderLeft: `5px solid ${currentSeverity.color}`, backgroundColor: `${currentSeverity.color}10` }"
+          >
+            <h6 class="font-semibold">Assessment Summary: {{ currentTool?.name }}</h6>
+            <p class="mb-1">Total Score: <strong>{{ assessmentTotalScore }}/{{ currentTool?.maxScore }}</strong></p>
+            <p class="mb-1">Interpretation: <strong>{{ currentSeverity.level }}</strong></p>
+            <p class="mb-1">Based on analysis of therapy session: {{ formatSessionName(selectedSession) }}</p>
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1">
+              <span>Score: {{ assessmentTotalScore }}/{{ currentTool?.maxScore }}</span>
+              <span>{{ Math.round((assessmentTotalScore / (currentTool?.maxScore || 1)) * 100) }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                class="h-3 rounded-full" 
+                :style="{ width: `${Math.round((assessmentTotalScore / (currentTool?.maxScore || 1)) * 100)}%`, backgroundColor: currentSeverity.color }"
+              ></div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div 
+              v-for="(question, index) in currentTool?.questions" 
+              :key="index"
+              class="p-4 rounded"
+              :style="{ borderLeft: `3px solid ${getScoreColor(assessmentResult.scores[index])}` }"
+            >
+              <div class="flex justify-between items-center mb-2">
+                <div class="font-medium">
+                  <strong>Q{{ index + 1 }}:</strong> {{ question }}
+                </div>
+                <div>
+                  <span 
+                    class="px-2 py-1 text-xs font-medium rounded"
+                    :style="{ backgroundColor: `${getScoreColor(assessmentResult.scores[index])}10`, 
+                      color: getScoreColor(assessmentResult.scores[index]), 
+                      border: `1px solid ${getScoreColor(assessmentResult.scores[index])}` }"
+                  >
+                    Score: {{ assessmentResult.scores[index] }}
+                  </span>
+                </div>
+              </div>
+              <div class="mt-2 p-3 bg-gray-50 rounded text-sm italic text-gray-600">
+                {{ assessmentResult.evidence[index] || 'No specific evidence found.' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+import Chart from 'chart.js/auto';
+
+export default {
+  name: 'TherapistDashboardView',
+  data() {
+    return {
+      // UI state
+      instructionsModalVisible: false,
+      loadingFiles: true,
+      loadingDomainData: false,
+      fileSelected: false,
+      assessmentLoading: false,
+      showAssessmentResults: false,
+      
+      // Data
+      assessmentFiles: [],
+      selectedFile: null,
+      domainData: [],
+      selectedDomain: '',
+      therapySessions: [],
+      selectedSession: '',
+      sessionPreview: '',
+      assessmentResult: { scores: [], evidence: [] },
+      
+      // Charts
+      domainCharts: {},
+      
+      // Assessment tools definitions
+      assessmentTools: {
+        "Depression": {
+          name: "PHQ-9 (Patient Health Questionnaire-9)",
+          description: "A 9-item depression scale to assist clinicians with diagnosing depression and monitoring treatment response.",
+          maxScore: 27,
+          questions: [
+            "Little interest or pleasure in doing things",
+            "Feeling down, depressed, or hopeless",
+            "Trouble falling/staying asleep, sleeping too much",
+            "Feeling tired or having little energy",
+            "Poor appetite or overeating",
+            "Feeling bad about yourself or that you're a failure or have let yourself or your family down",
+            "Trouble concentrating on things, such as reading the newspaper or watching television",
+            "Moving or speaking so slowly that other people could have noticed, or the opposite—being so fidgety or restless",
+            "Thoughts that you would be better off dead or of hurting yourself in some way"
+          ],
+          interpretation: [
+            { range: [0, 4], level: "None to minimal depression", color: "#28a745" },
+            { range: [5, 9], level: "Mild depression", color: "#17a2b8" },
+            { range: [10, 14], level: "Moderate depression", color: "#ffc107" },
+            { range: [15, 19], level: "Moderately severe depression", color: "#fd7e14" },
+            { range: [20, 27], level: "Severe depression", color: "#dc3545" }
+          ]
+        },
+        "Anxiety": {
+          name: "GAD-7 (Generalized Anxiety Disorder-7)",
+          description: "A 7-item anxiety scale to screen for and measure the severity of generalized anxiety disorder.",
+          maxScore: 21,
+          questions: [
+            "Feeling nervous, anxious, or on edge",
+            "Not being able to stop or control worrying",
+            "Worrying too much about different things",
+            "Trouble relaxing",
+            "Being so restless that it's hard to sit still",
+            "Becoming easily annoyed or irritable",
+            "Feeling afraid as if something awful might happen"
+          ],
+          interpretation: [
+            { range: [0, 4], level: "Minimal anxiety", color: "#28a745" },
+            { range: [5, 9], level: "Mild anxiety", color: "#17a2b8" },
+            { range: [10, 14], level: "Moderate anxiety", color: "#ffc107" },
+            { range: [15, 21], level: "Severe anxiety", color: "#dc3545" }
+          ]
+        },
+        "Suicidal Ideation": {
+          name: "C-SSRS (Columbia-Suicide Severity Rating Scale)",
+          description: "A tool that helps identify whether someone is at risk for suicide.",
+          maxScore: 25,
+          questions: [
+            "Have you wished you were dead or wished you could go to sleep and not wake up?",
+            "Have you actually had any thoughts about killing yourself?",
+            "Have you thought about how you might kill yourself?",
+            "Have you had any intention of acting on these thoughts?",
+            "Have you made a plan for a suicide attempt?"
+          ],
+          interpretation: [
+            { range: [0, 5], level: "Low risk", color: "#28a745" },
+            { range: [6, 15], level: "Moderate risk", color: "#ffc107" },
+            { range: [16, 25], level: "High risk", color: "#dc3545" }
+          ]
+        },
+        // More tools can be added for other domains
+      }
+    };
+  },
+  computed: {
+    highRiskDomains() {
+      return this.domainData.filter(d => d.risk_percentage >= 50);
+    },
+    otherDomains() {
+      return this.domainData.filter(d => d.risk_percentage < 50);
+    },
+    currentTool() {
+      return this.selectedDomain ? this.assessmentTools[this.selectedDomain] : null;
+    },
+    assessmentTotalScore() {
+      return this.assessmentResult.scores.reduce((sum, score) => sum + score, 0);
+    },
+    currentSeverity() {
+      if (!this.currentTool) return { level: "Unknown", color: "#6c757d" };
+      
+      const score = this.assessmentTotalScore;
+      
+      // Find the matching interpretation level
+      for (const level of this.currentTool.interpretation) {
+        if (score >= level.range[0] && score <= level.range[1]) {
+          return level;
+        }
+      }
+      
+      // If no matching level found (shouldn't happen with proper data)
+      return { 
+        level: "Unknown", 
+        color: "#6c757d",
+        description: "Score outside expected range" 
+      };
+    }
+  },
+  mounted() {
+    this.loadAssessmentFiles();
+  },
+  methods: {
+    // UI Methods
+    showInstructions() {
+      this.instructionsModalVisible = true;
+    },
+    
+    // Data Loading Methods
+    async loadAssessmentFiles() {
+      this.loadingFiles = true;
+      try {
+        const response = await axios.get('http://127.0.0.1:5001/api/assessment-files');
+        this.assessmentFiles = response.data.files || [];
+      } catch (error) {
+        console.error('Error loading assessment files:', error);
+        this.assessmentFiles = [];
+      } finally {
+        this.loadingFiles = false;
+      }
+    },
+    
+    async loadTherapySessions() {
+      try {
+        const response = await axios.get('http://127.0.0.1:5001/api/therapy-sessions');
+        this.therapySessions = response.data.files || [];
+      } catch (error) {
+        console.error('Error loading therapy sessions:', error);
+        this.therapySessions = [];
+      }
+    },
+    
+    async loadFileData(file) {
+      this.loadingDomainData = true;
+      try {
+        const response = await axios.get(`http://127.0.0.1:5001/api/assessment-data?file=${file}`);
+        this.domainData = response.data.domains || [];
+        this.fileSelected = true;
+        
+        // Clear any existing charts
+        this.destroyCharts();
+        
+        // Wait for DOM to update before creating charts
+        this.$nextTick(() => {
+          this.createDomainCharts();
+        });
+      } catch (error) {
+        console.error('Error loading file data:', error);
+        this.domainData = [];
+      } finally {
+        this.loadingDomainData = false;
+      }
+    },
+    
+    async loadSessionPreview(session) {
+      if (!session) {
+        this.sessionPreview = '';
+        return;
+      }
+      
+      try {
+        const response = await axios.get(`http://127.0.0.1:5001/api/therapy-session?file=${session}`);
+        if (response.data.content) {
+          // Show just a preview (first 200 characters)
+          this.sessionPreview = response.data.content.substring(0, 200);
+        } else {
+          this.sessionPreview = '';
+        }
+      } catch (error) {
+        console.error('Error loading session preview:', error);
+        this.sessionPreview = '';
+      }
+    },
+    
+    async runAssessment() {
+      if (!this.selectedDomain || !this.selectedSession) {
+        return;
+      }
+      
+      this.assessmentLoading = true;
+      try {
+        const response = await axios.post('http://127.0.0.1:5001/api/run-assessment', {
+          domain: this.selectedDomain,
+          session: this.selectedSession,
+          tool: this.currentTool?.name
+        });
+        
+        this.assessmentResult = response.data;
+        this.showAssessmentResults = true;
+      } catch (error) {
+        console.error('Error running assessment:', error);
+        // You could show an error message here
+      } finally {
+        this.assessmentLoading = false;
+      }
+    },
+    
+    // Chart Methods
+    createDomainCharts() {
+      this.domainData.forEach(domain => {
+        const canvasId = `chart-${domain.name.replace(/\s+/g, '-')}`;
+        const canvas = document.getElementById(canvasId);
+        
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          const severityColor = domain.severity_color || this.getSeverityColor(domain.severity);
+          
+          const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              datasets: [{
+                data: [domain.risk_percentage, 100 - domain.risk_percentage],
+                backgroundColor: [severityColor, '#f2f2f2'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              cutout: '70%',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+              }
+            }
+          });
+          
+          this.domainCharts[canvasId] = chart;
+        }
+      });
+    },
+    
+    destroyCharts() {
+      Object.values(this.domainCharts).forEach(chart => {
+        chart.destroy();
+      });
+      this.domainCharts = {};
+    },
+    
+    // Event Handlers
+    selectFile(file) {
+      this.selectedFile = file;
+      this.loadFileData(file);
+      
+      // Reset domain selection
+      this.selectedDomain = '';
+      this.showAssessmentResults = false;
+    },
+    
+    selectDomain(domainName) {
+      this.selectedDomain = domainName;
+      this.showAssessmentResults = false;
+      
+      // Load therapy sessions
+      this.loadTherapySessions();
+    },
+    
+    onDomainSelectChange() {
+      if (this.selectedDomain) {
+        this.selectDomain(this.selectedDomain);
+      }
+    },
+    
+    onSessionSelectChange() {
+      this.loadSessionPreview(this.selectedSession);
+    },
+    
+    // Helper Functions
+    formatFileName(file) {
+      const dateMatch = file.match(/\d{8}_\d{6}/);
+      if (dateMatch) {
+        const dateStr = dateMatch[0];
+        const year = dateStr.substring(0, 4);
+        const month = dateStr.substring(4, 6);
+        const day = dateStr.substring(6, 8);
+        const hour = dateStr.substring(9, 11);
+        const minute = dateStr.substring(11, 13);
+        
+        const date = new Date(year, month-1, day, hour, minute);
+        return `Assessment - ${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      }
+      return file;
+    },
+    
+    formatFileDate(file) {
+      const dateMatch = file.match(/\d{8}/);
+      if (dateMatch) {
+        const dateStr = dateMatch[0];
+        const year = dateStr.substring(0, 4);
+        const month = dateStr.substring(4, 6);
+        const day = dateStr.substring(6, 8);
+        
+        return new Date(year, month-1, day).toLocaleDateString();
+      }
+      return 'Unknown date';
+    },
+    
+    formatSessionName(session) {
+      const dateMatch = session.match(/\d{8}/);
+      if (dateMatch) {
+        const dateStr = dateMatch[0];
+        const year = dateStr.substring(0, 4);
+        const month = dateStr.substring(4, 6);
+        const day = dateStr.substring(6, 8);
+        
+        const date = new Date(year, month-1, day);
+        return `Session - ${date.toLocaleDateString()}`;
+      }
+      return session;
+    },
+    
+    getSeverityColor(severity) {
+      switch (severity) {
+        case "None": return "#28a745"; // Green
+        case "Slight/Rare": return "#17a2b8"; // Teal
+        case "Mild": return "#ffc107"; // Yellow
+        case "Moderate": return "#fd7e14"; // Orange
+        case "Severe": return "#dc3545"; // Red
+        default: return "#6c757d"; // Gray
+      }
+    },
+    
+    getScoreColor(score) {
+      if (score === 0) return '#6c757d'; // Gray
+      if (score === 1) return '#17a2b8'; // Teal
+      if (score === 2) return '#ffc107'; // Yellow
+      if (score === 3) return '#fd7e14'; // Orange
+      return '#dc3545'; // Red
+    }
+  }
+};
+</script>
+
+================
+File: src/views/TranscribeView.vue
+================
+<template>
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-8">Audio Transcription</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Left Column: Inputs -->
+      <div class="bg-white shadow-md rounded-lg p-6 space-y-6">
+        <div>
+          <label class="block text-sm font-medium mb-2">Upload Audio File</label>
+          <div class="flex items-center justify-center w-full">
+            <label
+              for="dropzone-file"
+              class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+            >
+              <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg
+                  class="w-10 h-10 mb-3 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  ></path>
+                </svg>
+                <p class="mb-2 text-sm text-gray-500">
+                  <span class="font-semibold">Click to upload</span> or drag and drop
+                </p>
+                <p class="text-xs text-gray-500">MP3, WAV, or M4A (MAX. 800MB)</p>
+              </div>
+              <input
+                id="dropzone-file"
+                type="file"
+                class="hidden"
+                accept="audio/*"
+                @change="handleFileUpload"
+              />
+            </label>
+          </div>
+          <p v-if="file" class="mt-2 text-sm text-gray-600">Selected file: {{ file.name }}</p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-medium">Model Size</label>
+          <select v-model="form.model_size" class="w-full p-2 border rounded">
+            <option v-for="size in modelSizes" :key="size" :value="size">{{ size }}</option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-medium">Chunk Length (minutes)</label>
+          <input
+            type="range"
+            v-model.number="form.chunk_minutes"
+            min="1"
+            max="60"
+            step="1"
+            class="w-full"
+          />
+          <span>{{ form.chunk_minutes }}</span>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-medium">Language</label>
+          <select v-model="form.language" class="w-full p-2 border rounded">
+            <option v-for="lang in languages" :key="lang" :value="lang">{{ lang }}</option>
+          </select>
+        </div>
+
+        <button
+          @click="transcribe"
+          :disabled="!file || loading"
+          class="w-full bg-blue-600 text-white p-3 rounded-lg text-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition duration-300"
+        >
+          {{ loading ? 'Transcribing...' : 'Transcribe Audio' }}
+        </button>
+      </div>
+
+      <!-- Right Column: Outputs -->
+      <div class="bg-white shadow-md rounded-lg p-6 space-y-6">
+        <div>
+          <label class="block text-sm font-medium mb-2">Transcription</label>
+          <div
+            v-if="result.transcript"
+            class="p-4 border rounded bg-gray-50 h-96 overflow-auto"
+            v-html="formattedTranscript"
+          ></div>
+          <div
+            v-else
+            class="p-4 border rounded bg-gray-50 h-96 flex items-center justify-center text-gray-500"
+          >
+            No transcription yet
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Status</label>
+          <div class="p-3 border rounded bg-gray-50">
+            {{ result.status || 'Awaiting transcription...' }}
+          </div>
+        </div>
+
+        <div v-if="result.output_file">
+          <a
+            :href="downloadUrl"
+            target="_blank"
+            class="inline-block bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-300"
+          >
+            Download Transcript
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+  
+  <script>
+export default {
+  data() {
+    return {
+      file: null,
+      loading: false,
+      form: {
+        model_size: 'base',
+        chunk_minutes: 30,
+        language: 'en',
+      },
+      result: {
+        transcript: '',
+        output_file: '',
+        status: '',
+      },
+      modelSizes: ['tiny', 'base', 'small', 'medium', 'large', 'large-v2'],
+      languages: ['auto', 'en', 'fr', 'de', 'es', 'it', 'ja', 'zh', 'ru'],
+    }
+  },
+  computed: {
+    formattedTranscript() {
+      return this.result.transcript
+        .replace(/\n/g, '<br>')
+        .replace(/## (.*)/g, '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>')
+    },
+    downloadUrl() {
+      return `http://localhost:8000/download/${this.result.output_file.split('/').pop()}`
+    },
+  },
+  methods: {
+    handleFileUpload(event) {
+      this.file = event.target.files[0]
+    },
+    async transcribe() {
+      if (!this.file) return
+
+      this.loading = true
+      const formData = new FormData()
+      formData.append('audio_file', this.file)
+      Object.keys(this.form).forEach((key) => formData.append(key, this.form[key]))
+
+      try {
+        const response = await fetch('http://localhost:8000/transcribe/', {
+          method: 'POST',
+          body: formData,
+        })
+        const data = await response.json()
+        if (response.ok) {
+          this.result = data
+        } else {
+          this.result.status = data.detail
+        }
+      } catch (error) {
+        this.result.status = `Error: ${error.message}`
+      } finally {
+        this.loading = false
+      }
+    },
+  },
+}
+</script>
+  
+  <style scoped>
+/* Add any component-specific styles here */
+</style>
 
 ================
 File: tailwind.config.js
