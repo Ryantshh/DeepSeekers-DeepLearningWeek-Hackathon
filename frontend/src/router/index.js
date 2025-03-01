@@ -29,6 +29,11 @@ const router = createRouter({
       component: () => import('../views/MentalHealthScreenView.vue'),
     },
     {
+      path: '/therapistDashboard',
+      name: 'therapistDashboard',
+      component: () => import('../views/TherapistDashboardView.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('../views/NotFoundView.vue'),

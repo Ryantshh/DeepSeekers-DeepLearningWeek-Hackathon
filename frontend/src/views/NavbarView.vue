@@ -136,6 +136,7 @@ const navLinks = [
   { to: '/about', text: 'About' },
   { to: '/therapist', text: 'Therapist' },
   { to: '/transcribe', text: 'Transcribe' },
+  { to: '/therapistDashboard', text: 'Therapist Dashboard' },
   // { to: '/mentalHealthScreen', text: 'Mental Analysis' },
 ]
 
