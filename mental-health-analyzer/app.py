@@ -11,10 +11,6 @@ from datetime import datetime
 from therapist_routes import register_therapist_routes
 from flask_cors import CORS
 
-# Add this after app initialization
-# Register therapist routes
-
-
 # Import our custom modules
 from text_processing import preprocess_text
 from model_config import get_model_config
@@ -24,8 +20,11 @@ from clinical_validation import validate_clinical_assessment
 load_dotenv()
 
 app = Flask(__name__)
-register_therapist_routes(app)
+# Enable CORS for all routes
 CORS(app)
+# Register therapist routes
+register_therapist_routes(app)
+
 # Configure Groq API
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
