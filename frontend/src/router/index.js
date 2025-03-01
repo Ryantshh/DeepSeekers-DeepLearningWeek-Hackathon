@@ -28,6 +28,7 @@ const router = createRouter({
       name: 'NotFound',
       component: () => import('../views/NotFoundView.vue'),
     },
+    { path: '/:pathMatch(.*)*', component: NotFound }, // Catch-all for 404
   ],
 })
 
