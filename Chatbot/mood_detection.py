@@ -52,7 +52,7 @@ def text_to_mood(aString):
 
     except requests.exceptions.RequestException as e:
         return f"🚨 Request Error: {str(e)}"
-    
+
 # This function takes in an audio file and return an analysis of it (in string)
 def audio_to_mood(file):
     upload_url = f"{BASE_URL}/audios"
