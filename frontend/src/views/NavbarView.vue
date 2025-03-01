@@ -135,8 +135,8 @@ const navLinks = [
   { to: '/', text: 'Home' },
   { to: '/about', text: 'About' },
   { to: '/therapist', text: 'Therapist' },
+  { to: '/therapist-dashboard', text: 'Dashboard' },
   { to: '/transcribe', text: 'Transcribe' },
-  { to: '/therapistDashboard', text: 'Therapist Dashboard' },
   // { to: '/mentalHealthScreen', text: 'Mental Analysis' },
 ]
 
@@ -204,7 +204,6 @@ onUnmounted(() => {
 </script>
 
 <style>
-
 @layer base {
   :root {
     --color-custom-beige: 224, 218, 212;
