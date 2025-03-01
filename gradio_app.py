@@ -78,11 +78,36 @@ def analyze_suicide_tendencies(text):
 #####################################
 # Combined Risk Score Calculation (Weighted Average Approach)
 #####################################
-def combined_risk_score(text, mental_weight=0.3, suicide_weight=0.7, mental_scale=5.0):
+def combined_risk_score(text, mental_scale=1.0, suicide_threshold=0.5, boost_value=0.8):
+    """
+    Computes a combined risk score using a piecewise approach with keyword boosting.
+    
+    - mental_scale: scaling factor for MentalBERT distress probability.
+    - suicide_threshold: if the CNN-BiLSTM suicide risk score is above this value, it dominates.
+    - boost_value: if critical keywords are found, return this high risk value.
+    
+    The function checks if critical phrases are present (e.g., "self harm", "suicide").
+    If found, it returns a boosted risk score (e.g., 0.9). Otherwise, it combines the model outputs.
+    """
+    # List of critical keywords; adjust as needed.
+    critical_keywords = ["self harm", "suicide", "kill myself", "end my life","life has no meaning"]
+    text_lower = text.lower()
+    if any(keyword in text_lower for keyword in critical_keywords):
+        # If any critical keyword is found, return a boosted risk score.
+        return boost_value
+
+    # Otherwise, get the model outputs.
     mental_score = analyze_mental_state(text) * mental_scale
     suicide_score = analyze_suicide_tendencies(text)
-    combined = mental_weight * mental_score + suicide_weight * suicide_score
+    
+    # Piecewise approach: if suicide risk is high, use that value; otherwise, average.
+    if suicide_score >= suicide_threshold:
+        combined = suicide_score
+    else:
+        combined = (mental_score + suicide_score) / 2
     return combined
+
+
 
 #####################################
 # Sliding window for recent risk scores
