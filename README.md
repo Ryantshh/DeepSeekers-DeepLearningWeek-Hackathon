@@ -8,7 +8,7 @@ npm install
 npm run dev
 ```
 
-## Backend
+## Backend (cd to respective folders to run)
 1. Run the chatbot microservice
 ```
 cd Chatbot
