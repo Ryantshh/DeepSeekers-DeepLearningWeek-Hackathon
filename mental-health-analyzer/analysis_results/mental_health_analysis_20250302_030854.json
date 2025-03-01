@@ -1,0 +1,218 @@
+{
+  "domains": [
+    {
+      "name": "Depression",
+      "scores": [
+        2,
+        2
+      ],
+      "evidence": [
+        "Man I'm feeling quite down today, do you have any suggestions?",
+        "Well i tried going for walks and things like that, but nothing seems interesting anymore."
+      ],
+      "total": 4,
+      "risk_percentage": 50.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Anger",
+      "scores": [
+        2
+      ],
+      "evidence": [
+        "It can be really discouraging when we're struggling with something we're passionate about, especially if it's related to our work or identity."
+      ],
+      "total": 2,
+      "risk_percentage": 50.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Mania",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Anxiety",
+      "scores": [
+        2,
+        2,
+        2
+      ],
+      "evidence": [
+        "Feeling down can be really tough",
+        "It can be hard to find motivation when you're feeling unenthusiastic",
+        "Feeling embarrassed about asking for help can be a significant barrier."
+      ],
+      "total": 6,
+      "risk_percentage": 50.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Somatic Symptoms",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Suicidal Ideation",
+      "scores": [
+        4
+      ],
+      "evidence": [
+        "Sometimes I want to end it"
+      ],
+      "total": 4,
+      "risk_percentage": 100.0,
+      "severity": "Severe",
+      "clinical_concern": true
+    },
+    {
+      "name": "Psychosis",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Sleep Problems",
+      "scores": [
+        2
+      ],
+      "evidence": [
+        "I got no sleep for days cuz of this"
+      ],
+      "total": 2,
+      "risk_percentage": 50.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Memory",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Repetitive Thoughts and Behaviors",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Dissociation",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Personality Functioning",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Substance Use",
+      "scores": [
+        0,
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    }
+  ],
+  "summary": {
+    "clinical_concerns": [
+      "Depression",
+      "Anger",
+      "Anxiety",
+      "Suicidal Ideation",
+      "Sleep Problems"
+    ],
+    "confidence_levels": {
+      "Depression": "High",
+      "Anger": "High",
+      "Mania": "Low",
+      "Anxiety": "High",
+      "Somatic Symptoms": "Low",
+      "Suicidal Ideation": "High",
+      "Psychosis": "Low",
+      "Sleep Problems": "High",
+      "Memory": "Low",
+      "Repetitive Thoughts and Behaviors": "Low",
+      "Dissociation": "Low",
+      "Personality Functioning": "Low",
+      "Substance Use": "Low"
+    },
+    "notes": []
+  }
+}

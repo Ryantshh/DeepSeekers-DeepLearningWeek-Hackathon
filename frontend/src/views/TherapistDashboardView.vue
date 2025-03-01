@@ -219,7 +219,7 @@ const getResponseColor = (score) => {
 
 const loadSessions = async () => {
   try {
-    const response = await axios.get('http://localhost:5000/api/therapy-sessions')
+    const response = await axios.get('http://localhost:5001/api/therapy-sessions')
     sessions.value = response.data.files
   } catch (err) {
     error.value = 'Failed to load therapy sessions: ' + err.message
@@ -231,7 +231,7 @@ const runAssessment = async () => {
   loading.value = true
   error.value = null
   try {
-    const response = await axios.post('http://localhost:5000/api/run-assessment', {
+    const response = await axios.post('http://localhost:5001/api/run-assessment', {
       domain: selectedDomain.value,
       session: selectedSession.value,
     })
