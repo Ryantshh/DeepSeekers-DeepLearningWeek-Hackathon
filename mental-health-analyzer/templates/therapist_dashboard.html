@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Therapist Dashboard - DSM-5 Assessment Tools</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            font-family: Arial, sans-serif;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            border-radius: 10px 10px 0 0;
+            background-color: #4169E1;
+            color: white;
+            padding: 1.25rem;
+        }
+
+        .domain-card {
+            margin-bottom: 1.5rem;
+            height: 100%;
+        }
+
+        .domain-card .card-header {
+            background-color: #f8f9fa;
+            color: #212529;
+            border-bottom: none;
+            padding: 1rem;
+        }
+
+        .domain-card.high-risk .card-header {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 5px solid #dc3545;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 120px;
+            width: 120px;
+            margin: 0 auto;
+        }
+
+        .chart-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .selected-domain {
+            border: 2px solid #4169E1;
+            box-shadow: 0 0 10px rgba(65, 105, 225, 0.5);
+        }
+
+        .assessment-form {
+            display: none;
+        }
+
+        .assessment-results {
+            display: none;
+        }
+
+        .loader {
+            display: none;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .assessment-item {
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            margin-bottom: 1rem;
+        }
+
+        .response-highlight {
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+        }
+
+        .evidence-item {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-style: italic;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .session-notes {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .file-list-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            cursor: pointer;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .file-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .file-item.active {
+            background-color: rgba(65, 105, 225, 0.1);
+            border-left: 3px solid #4169E1;
+        }
+
+        .action-btn {
+            background-color: #4169E1;
+            border-color: #4169E1;
+            border-radius: 25px;
+            padding: 0.65rem 1.5rem;
+            font-weight: 500;
+        }
+
+        .action-btn:hover {
+            background-color: #3252a8;
+            border-color: #3252a8;
+        }
+
+        .alert-section {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .high-risk-alert {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 5px solid #dc3545;
+        }
+
+        .progress-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-label {
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Adjust file list container for horizontal layout */
+        .file-list-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 0.5rem;
+        }
+
+        /* Make file items display horizontally */
+        .file-list-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .file-item {
+            flex-basis: calc(50% - 0.5rem);
+            max-width: calc(50% - 0.5rem);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .file-item {
+                flex-basis: 100%;
+                max-width: 100%;
+            }
+        }
+
+        /* Adjust domain cards for better flow */
+        .domain-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .domain-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+
+        .domain-card.selected-domain {
+            transform: translateY(-3px);
+        }
+
+        /* Adjust chart sizes for consistent display */
+        .chart-container {
+            min-width: 100px;
+            min-height: 100px;
+        }
+
+        /* Improve assessment items display */
+        .assessment-item {
+            transition: transform 0.1s;
+        }
+
+        .assessment-item:hover {
+            transform: translateX(3px);
+        }
+
+        /* Add some space between major sections */
+        .dashboard-container > .row > .col-12 {
+            margin-bottom: 2rem;
+        }
+
+        /* Make the progress bars more visible */
+        .progress {
+            height: 12px;
+            border-radius: 6px;
+        }
+
+        /* Make sure modals appear on top */
+        .modal {
+            z-index: 1060;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="mb-0">Therapist Dashboard</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Patient Assessment Tools</h4>
+                        <p>Review Level 1 screening results and conduct Level 2 assessments for specific domains.</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-outline-primary me-2" id="viewInstructionsBtn">View Instructions</button>
+                        <button class="btn btn-outline-secondary" id="refreshFilesBtn">Refresh Files</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Modal -->
+        <div class="modal fade" id="instructionsModal" tabindex="-1" aria-labelledby="instructionsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="instructionsModalLabel">Therapist Dashboard Instructions</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h5>Using the Dashboard</h5>
+                        <ol>
+                            <li><strong>Select a Level 1 Assessment:</strong> Click on any file in the "Level 1 Assessment Results" section to view the patient's initial screening results.</li>
+                            <li><strong>Review Domain Scores:</strong> The dashboard will display all domains with their risk percentages and severity levels.</li>
+                            <li><strong>Select a Domain for Level 2 Assessment:</strong> Click on any domain card or use the dropdown menu to select a specific domain for deeper assessment.</li>
+                            <li><strong>Select a Therapy Session:</strong> Choose a therapy session text file to analyze.</li>
+                            <li><strong>Run the Assessment:</strong> Click the "Run Assessment" button to analyze the therapy session text using the appropriate Level 2 assessment tool.</li>
+                            <li><strong>Review Results:</strong> The system will display detailed results of the Level 2 assessment, including scores, interpretation, and evidence from the text.</li>
+                        </ol>
+                        
+                        <h5>About the Assessment Tools</h5>
+                        <p>This dashboard uses validated clinical assessment tools for each domain:</p>
+                        <ul>
+                            <li><strong>Depression:</strong> PHQ-9 (Patient Health Questionnaire-9)</li>
+                            <li><strong>Anxiety:</strong> GAD-7 (Generalized Anxiety Disorder-7)</li>
+                            <li><strong>Suicidal Ideation:</strong> C-SSRS (Columbia-Suicide Severity Rating Scale)</li>
+                            <li><strong>Substance Use:</strong> ASSIST (Alcohol, Smoking and Substance Involvement Screening Test)</li>
+                            <!-- Other assessment tools -->
+                        </ul>
+                        
+                        <div class="alert alert-info">
+                            <strong>Note:</strong> This tool is designed to assist clinical judgment, not replace it. All assessments should be interpreted within the context of your professional clinical evaluation.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="row">
+            <!-- Section 1: File Selection -->
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Level 1 Assessment Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="file-list-container" id="assessmentFileList">
+                                    <!-- Files will be loaded here -->
+                                    <div class="text-center py-3">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading files...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="alert alert-info">
+                                    <h6>Instructions</h6>
+                                    <p class="mb-0">Select a Level 1 assessment file to view domain analysis</p>
+                                </div>
+                                <div id="patientInfoCard" class="card mb-3" style="display: none;">
+                                    <div class="card-body">
+                                        <h6 class="mb-2">Patient Information</h6>
+                                        <p class="mb-0" id="patientInfo">Select a file</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Domain Selection -->
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Domain Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="domainSelectionArea">
+                            <div class="mb-3">
+                                <label for="domainSelect" class="form-label">Assessment Toolkits</label>
+                                <select class="form-select" id="domainSelect">
+                                    <option value="">Select a domain for Level 2 assessment</option>
+                                    <!-- Domain options will be populated here -->
+                                </select>
+                            </div>
+
+                            <div id="domainCardsContainer">
+                                <!-- Domain cards will be displayed here -->
+                                <div class="text-center py-5">
+                                    <p class="text-muted">Select a Level 1 assessment file to view domains</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Level 2 Assessment -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Level 2 Assessment</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="noSelectionMessage" class="text-center py-5">
+                            <p class="text-muted">Select a domain to perform a Level 2 assessment</p>
+                        </div>
+
+                        <!-- Assessment Form (Initially Hidden) -->
+                        <div id="assessmentForm" class="assessment-form">
+                            <h5 id="selectedDomainTitle" class="mb-3">Domain Assessment</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="sessionSelect" class="form-label">Select Therapy Session</label>
+                                        <select class="form-select" id="sessionSelect">
+                                            <option value="">Select a therapy session</option>
+                                            <!-- Session options will be populated here -->
+                                        </select>
+                                    </div>
+
+                                    <div id="sessionPreview" class="session-notes mb-3" style="display: none;">
+                                        <!-- Session text preview will appear here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div id="assessmentInfo" class="alert alert-info mt-md-0 mt-3">
+                                        <!-- Assessment tool info will be displayed here -->
+                                        <p class="mb-0">Select a domain and therapy session to begin</p>
+                                    </div>
+                                    
+                                    <div class="d-grid mt-3">
+                                        <button id="runAssessmentBtn" class="btn btn-primary action-btn">Run Assessment</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loader (Initially Hidden) -->
+                        <div id="assessmentLoader" class="loader"></div>
+
+                        <!-- Assessment Results (Initially Hidden) -->
+                        <div id="assessmentResults" class="assessment-results">
+                            <h5 id="assessmentResultTitle" class="mb-3">Assessment Results</h5>
+                            
+                            <div id="assessmentSummary" class="alert-section mb-3">
+                                <!-- Summary will be displayed here -->
+                            </div>
+
+                            <div id="assessmentScoreDisplay" class="progress-container">
+                                <!-- Score display will be added here -->
+                            </div>
+
+                            <div id="assessmentItems">
+                                <!-- Assessment items will be displayed here -->
+                            </div>
+
+                            <button id="backToFormBtn" class="btn btn-outline-secondary mt-3">Back to Assessment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // DOM Elements
+            const assessmentFileList = document.getElementById('assessmentFileList');
+            const domainSelect = document.getElementById('domainSelect');
+            const domainCardsContainer = document.getElementById('domainCardsContainer');
+            const selectedDomainTitle = document.getElementById('selectedDomainTitle');
+            const sessionSelect = document.getElementById('sessionSelect');
+            const sessionPreview = document.getElementById('sessionPreview');
+            const assessmentForm = document.getElementById('assessmentForm');
+            const assessmentLoader = document.getElementById('assessmentLoader');
+            const assessmentResults = document.getElementById('assessmentResults');
+            const noSelectionMessage = document.getElementById('noSelectionMessage');
+            const assessmentInfo = document.getElementById('assessmentInfo');
+            const runAssessmentBtn = document.getElementById('runAssessmentBtn');
+            const backToFormBtn = document.getElementById('backToFormBtn');
+            const patientInfo = document.getElementById('patientInfo');
+            const patientInfoCard = document.getElementById('patientInfoCard');
+            const viewInstructionsBtn = document.getElementById('viewInstructionsBtn');
+            const refreshFilesBtn = document.getElementById('refreshFilesBtn');
+            const assessmentResultTitle = document.getElementById('assessmentResultTitle');
+            const assessmentSummary = document.getElementById('assessmentSummary');
+            const assessmentScoreDisplay = document.getElementById('assessmentScoreDisplay');
+            const assessmentItems = document.getElementById('assessmentItems');
+
+            // Bootstrap modals
+            const instructionsModal = new bootstrap.Modal(document.getElementById('instructionsModal'));
+
+            // Assessment tools definitions by domain
+            const assessmentTools = {
+                "Depression": {
+                    name: "PHQ-9 (Patient Health Questionnaire-9)",
+                    description: "A 9-item depression scale to assist clinicians with diagnosing depression and monitoring treatment response.",
+                    maxScore: 27,
+                    interpretation: [
+                        { range: [0, 4], level: "Minimal or none", color: "#28a745" },
+                        { range: [5, 9], level: "Mild", color: "#17a2b8" },
+                        { range: [10, 14], level: "Moderate", color: "#ffc107" },
+                        { range: [15, 19], level: "Moderately severe", color: "#fd7e14" },
+                        { range: [20, 27], level: "Severe", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Little interest or pleasure in doing things",
+                        "Feeling down, depressed, or hopeless",
+                        "Trouble falling/staying asleep, sleeping too much",
+                        "Feeling tired or having little energy",
+                        "Poor appetite or overeating",
+                        "Feeling bad about yourself or that you're a failure or have let yourself or your family down",
+                        "Trouble concentrating on things, such as reading the newspaper or watching television",
+                        "Moving or speaking so slowly that other people could have noticed, or the opposite—being so fidgety or restless that you have been moving around a lot more than usual",
+                        "Thoughts that you would be better off dead or of hurting yourself in some way"
+                    ]
+                },
+                "Anxiety": {
+                    name: "GAD-7 (Generalized Anxiety Disorder-7)",
+                    description: "A 7-item anxiety scale to screen for and measure the severity of generalized anxiety disorder.",
+                    maxScore: 21,
+                    interpretation: [
+                        { range: [0, 4], level: "Minimal anxiety", color: "#28a745" },
+                        { range: [5, 9], level: "Mild anxiety", color: "#17a2b8" },
+                        { range: [10, 14], level: "Moderate anxiety", color: "#ffc107" },
+                        { range: [15, 21], level: "Severe anxiety", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Feeling nervous, anxious, or on edge",
+                        "Not being able to stop or control worrying",
+                        "Worrying too much about different things",
+                        "Trouble relaxing",
+                        "Being so restless that it's hard to sit still",
+                        "Becoming easily annoyed or irritable",
+                        "Feeling afraid as if something awful might happen"
+                    ]
+                },
+                "Suicidal Ideation": {
+                    name: "C-SSRS (Columbia-Suicide Severity Rating Scale)",
+                    description: "A tool that helps identify whether someone is at risk for suicide.",
+                    maxScore: 25,
+                    interpretation: [
+                        { range: [0, 5], level: "Low risk", color: "#28a745" },
+                        { range: [6, 15], level: "Moderate risk", color: "#ffc107" },
+                        { range: [16, 25], level: "High risk", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Have you wished you were dead or wished you could go to sleep and not wake up?",
+                        "Have you actually had any thoughts about killing yourself?",
+                        "Have you thought about how you might kill yourself?",
+                        "Have you had any intention of acting on these thoughts?",
+                        "Have you made a plan for a suicide attempt?"
+                    ]
+                },
+                "Anger": {
+                    name: "PROMIS Anger",
+                    description: "A measure for evaluating anger in adults.",
+                    maxScore: 40,
+                    interpretation: [
+                        { range: [0, 13], level: "Low anger", color: "#28a745" },
+                        { range: [14, 26], level: "Moderate anger", color: "#ffc107" },
+                        { range: [27, 40], level: "High anger", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "I felt angry",
+                        "I felt like I was ready to explode",
+                        "I was grouchy",
+                        "I felt annoyed",
+                        "I felt like I needed to let out my anger",
+                        "I had trouble controlling my temper",
+                        "I felt like yelling at someone",
+                        "I felt like breaking things"
+                    ]
+                },
+                "Mania": {
+                    name: "Altman Self-Rating Mania Scale (ASRM)",
+                    description: "A 5-item self-rating mania scale to assess the presence and severity of manic symptoms.",
+                    maxScore: 20,
+                    interpretation: [
+                        { range: [0, 5], level: "No indication of mania", color: "#28a745" },
+                        { range: [6, 10], level: "Possible hypomania", color: "#ffc107" },
+                        { range: [11, 20], level: "High probability of mania", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Elevated/Euphoric Mood: Happiness, optimism, self-confidence",
+                        "Increased Motor Activity/Energy: More energy, more active, more restless",
+                        "Sexual Interest: More sexual interest, more sexual thoughts, sexual activity",
+                        "Sleep: Less need for sleep than usual",
+                        "Irritability: More irritable, more argumentative, less tolerant"
+                    ]
+                },
+                "Somatic Symptoms": {
+                    name: "PHQ-15 (Patient Health Questionnaire-15)",
+                    description: "A 15-item somatic symptom scale to screen for somatization and to monitor somatic symptom severity.",
+                    maxScore: 30,
+                    interpretation: [
+                        { range: [0, 4], level: "Minimal somatic symptoms", color: "#28a745" },
+                        { range: [5, 9], level: "Low somatic symptoms", color: "#17a2b8" },
+                        { range: [10, 14], level: "Medium somatic symptoms", color: "#ffc107" },
+                        { range: [15, 30], level: "High somatic symptoms", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Stomach pain",
+                        "Back pain",
+                        "Pain in your arms, legs, or joints",
+                        "Menstrual cramps or other problems with your periods (women only)",
+                        "Headaches",
+                        "Chest pain",
+                        "Dizziness",
+                        "Fainting spells",
+                        "Feeling your heart pound or race",
+                        "Shortness of breath",
+                        "Pain or problems during sexual intercourse",
+                        "Constipation, loose bowels, or diarrhea",
+                        "Nausea, gas, or indigestion",
+                        "Feeling tired or having low energy",
+                        "Trouble sleeping"
+                    ]
+                },
+                "Psychosis": {
+                    name: "PRIME Screen-Revised",
+                    description: "A 12-item self-report screen designed to identify individuals who may be experiencing early signs of psychosis.",
+                    maxScore: 24,
+                    interpretation: [
+                        { range: [0, 6], level: "Low likelihood of psychosis risk", color: "#28a745" },
+                        { range: [7, 13], level: "Possible psychosis risk", color: "#ffc107" },
+                        { range: [14, 24], level: "High likelihood of psychosis risk", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "I think that I have felt that there are odd or unusual things going on that I can't explain.",
+                        "I think that I might be able to predict the future.",
+                        "I may have felt that there could possibly be something interrupting or controlling my thoughts, feelings, or actions.",
+                        "I have had the experience of doing something differently because of my superstitions.",
+                        "I think that I may get confused at times whether something I experience or perceive may be real or may be just part of my imagination or dreams.",
+                        "I have thought that it might be possible that other people can read my mind, or that I can read others' minds."
+                    ]
+                },
+                "Sleep Problems": {
+                    name: "ISI (Insomnia Severity Index)",
+                    description: "A 7-item self-report questionnaire assessing the nature, severity, and impact of insomnia.",
+                    maxScore: 28,
+                    interpretation: [
+                        { range: [0, 7], level: "No clinically significant insomnia", color: "#28a745" },
+                        { range: [8, 14], level: "Subthreshold insomnia", color: "#17a2b8" },
+                        { range: [15, 21], level: "Moderate clinical insomnia", color: "#ffc107" },
+                        { range: [22, 28], level: "Severe clinical insomnia", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Difficulty falling asleep",
+                        "Difficulty staying asleep",
+                        "Problems waking up too early",
+                        "How satisfied/dissatisfied are you with your current sleep pattern?",
+                        "How noticeable to others do you think your sleep problem is in terms of impairing the quality of your life?",
+                        "How worried/distressed are you about your current sleep problem?",
+                        "To what extent do you consider your sleep problem to interfere with your daily functioning currently?"
+                    ]
+                },
+                "Memory": {
+                    name: "PROMIS Cognitive Function",
+                    description: "A measure of perceived cognitive abilities.",
+                    maxScore: 40,
+                    interpretation: [
+                        { range: [0, 13], level: "Severe cognitive concerns", color: "#dc3545" },
+                        { range: [14, 26], level: "Moderate cognitive concerns", color: "#ffc107" },
+                        { range: [27, 40], level: "Minimal cognitive concerns", color: "#28a745" }
+                    ],
+                    questions: [
+                        "I have had to work harder than usual to keep track of what I was doing",
+                        "I have had trouble shifting back and forth between different activities that require thinking",
+                        "My thinking has been slow",
+                        "I have had trouble forming thoughts",
+                        "I have had trouble adding or subtracting numbers in my head",
+                        "I have had trouble figuring out what I meant to do once I got there",
+                        "I have had trouble finding my way to a familiar place",
+                        "I have had trouble concentrating"
+                    ]
+                },
+                "Repetitive Thoughts and Behaviors": {
+                    name: "FOCI (Florida Obsessive-Compulsive Inventory)",
+                    description: "A self-report measure of obsessive-compulsive symptoms.",
+                    maxScore: 20,
+                    interpretation: [
+                        { range: [0, 7], level: "Minimal OCD symptoms", color: "#28a745" },
+                        { range: [8, 13], level: "Moderate OCD symptoms", color: "#ffc107" },
+                        { range: [14, 20], level: "Severe OCD symptoms", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Time occupied by obsessive thoughts",
+                        "Interference from obsessive thoughts",
+                        "Distress from obsessive thoughts",
+                        "Resistance to obsessive thoughts",
+                        "Control over obsessive thoughts",
+                        "Time spent performing compulsive behaviors",
+                        "Interference from compulsive behaviors",
+                        "Distress from compulsive behaviors",
+                        "Resistance to compulsive behaviors",
+                        "Control over compulsive behaviors"
+                    ]
+                },
+                "Dissociation": {
+                    name: "DES-II (Dissociative Experiences Scale)",
+                    description: "A 28-item self-report measure of dissociative symptoms.",
+                    maxScore: 40,
+                    interpretation: [
+                        { range: [0, 10], level: "Normal range", color: "#28a745" },
+                        { range: [11, 20], level: "Mild dissociation", color: "#17a2b8" },
+                        { range: [21, 30], level: "Moderate dissociation", color: "#ffc107" },
+                        { range: [31, 40], level: "Severe dissociation", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "Some people have the experience of finding themselves in a place and having no idea how they got there.",
+                        "Some people have the experience of finding themselves dressed in clothes that they don't remember putting on.",
+                        "Some people have the experience of finding new things among their belongings that they do not remember buying.",
+                        "Some people sometimes find that they are approached by people that they do not know who call them by another name or insist that they have met them before.",
+                        "Some people have the experience of feeling as though they are standing next to themselves or watching themselves do something and they actually see themselves as if they were looking at another person."
+                    ]
+                },
+                "Personality Functioning": {
+                    name: "PID-5 (Personality Inventory for DSM-5)",
+                    description: "A self-rated personality trait assessment scale for adults.",
+                    maxScore: 40,
+                    interpretation: [
+                        { range: [0, 13], level: "Low personality dysfunction", color: "#28a745" },
+                        { range: [14, 26], level: "Moderate personality dysfunction", color: "#ffc107" },
+                        { range: [27, 40], level: "High personality dysfunction", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "I don't get as much pleasure out of things as others seem to.",
+                        "I feel like I act totally on impulse.",
+                        "I often have thoughts that make sense to me but that other people say are strange.",
+                        "I avoid risky situations.",
+                        "It's no big deal if I hurt other people's feelings.",
+                        "I rarely get enthusiastic about anything.",
+                        "I go out of my way to avoid any kind of conflict.",
+                        "I'm inflexible in my ways, even when it would clearly be to my advantage to change."
+                    ]
+                },
+                "Substance Use": {
+                    name: "ASSIST (Alcohol, Smoking and Substance Involvement Screening Test)",
+                    description: "A screening test to assess use of psychoactive substances.",
+                    maxScore: 39,
+                    interpretation: [
+                        { range: [0, 10], level: "Low risk", color: "#28a745" },
+                        { range: [11, 26], level: "Moderate risk", color: "#ffc107" },
+                        { range: [27, 39], level: "High risk", color: "#dc3545" }
+                    ],
+                    questions: [
+                        "In your life, which of the following substances have you ever used?",
+                        "In the past three months, how often have you used the substances you mentioned?",
+                        "In the past three months, how often have you had a strong desire or urge to use?",
+                        "In the past three months, how often has your use of substances led to health, social, legal, or financial problems?",
+                        "In the past three months, how often have you failed to do what was normally expected of you because of your use of substances?",
+                        "Has a friend or relative or anyone else ever expressed concern about your use of substances?",
+                        "Have you ever tried and failed to control, cut down or stop using substances?"
+                    ]
+                }
+            };
+
+            // Global state
+            let selectedDomain = null;
+            let selectedFile = null;
+            let selectedSession = null;
+            let domainData = [];
+
+            // Show instructions modal button
+            viewInstructionsBtn.addEventListener('click', function() {
+                instructionsModal.show();
+            });
+
+            // Refresh files button
+            refreshFilesBtn.addEventListener('click', function() {
+                loadAssessmentFiles();
+            });
+
+            // Load assessment files
+            function loadAssessmentFiles() {
+                assessmentFileList.innerHTML = `
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading files...</p>
+                    </div>
+                `;
+
+                // Fetch list of assessment files
+                fetch('/api/assessment-files')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.files && data.files.length > 0) {
+                            displayFileList(data.files);
+                        } else {
+                            assessmentFileList.innerHTML = `
+                                <div class="text-center py-3">
+                                    <p class="text-muted">No assessment files found</p>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading files:', error);
+                        assessmentFileList.innerHTML = `
+                            <div class="alert alert-danger">
+                                Error loading files. Please try again.
+                            </div>
+                        `;
+                    });
+            }
+
+            // Display file list
+            function displayFileList(files) {
+                assessmentFileList.innerHTML = '';
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.dataset.file = file;
+                    
+                    // Extract date and time from filename
+                    const dateMatch = file.match(/\d{8}_\d{6}/);
+                    let displayName = file;
+                    
+                    if (dateMatch) {
+                        const dateStr = dateMatch[0];
+                        const year = dateStr.substring(0, 4);
+                        const month = dateStr.substring(4, 6);
+                        const day = dateStr.substring(6, 8);
+                        const hour = dateStr.substring(9, 11);
+                        const minute = dateStr.substring(11, 13);
+                        
+                        const date = new Date(year, month-1, day, hour, minute);
+                        displayName = `Assessment - ${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    }
+                    
+                    fileItem.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <i class="bi bi-file-text me-2"></i>
+                                <span>${displayName}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    fileItem.addEventListener('click', function() {
+                        // Remove active class from all file items
+                        document.querySelectorAll('.file-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        
+                        // Add active class to selected file
+                        this.classList.add('active');
+                        
+                        // Set selected file
+                        selectedFile = this.dataset.file;
+                        
+                        // Load file data
+                        loadFileData(selectedFile);
+                    });
+                    
+                    assessmentFileList.appendChild(fileItem);
+                });
+            }
+
+            // Load file data
+            function loadFileData(file) {
+                fetch(`/api/assessment-data?file=${file}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update patient info
+                        const dateMatch = file.match(/\d{8}/);
+                        let dateStr = "";
+                        
+                        if (dateMatch) {
+                            const year = dateMatch[0].substring(0, 4);
+                            const month = dateMatch[0].substring(4, 6);
+                            const day = dateMatch[0].substring(6, 8);
+                            
+                            dateStr = new Date(year, month-1, day).toLocaleDateString();
+                        }
+                        
+                        patientInfo.textContent = `Assessment from ${dateStr}`;
+                        patientInfoCard.style.display = 'block';
+                        
+                        // Process domain data
+                        domainData = data.domains;
+                        
+                        // Display domain cards
+                        displayDomainCards(domainData);
+                        
+                        // Populate domain select dropdown
+                        populateDomainSelect(domainData);
+                    })
+                    .catch(error => {
+                        console.error('Error loading file data:', error);
+                        domainCardsContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                Error loading file data. Please try again.
+                            </div>
+                        `;
+                    });
+            }
+
+            // Display domain cards
+            function displayDomainCards(domains) {
+                domainCardsContainer.innerHTML = '';
+                
+                // Sort domains by risk percentage (highest first)
+                domains.sort((a, b) => b.risk_percentage - a.risk_percentage);
+                
+                // Create a row for the cards
+                const row = document.createElement('div');
+                row.className = 'row';
+                domainCardsContainer.appendChild(row);
+                
+                domains.forEach(domain => {
+                    const cardCol = document.createElement('div');
+                    cardCol.className = 'col-lg-4 col-md-6 mb-3'; // Three cards per row on large screens, two on medium
+                    
+                    const isHighRisk = domain.risk_percentage >= 50;
+                    
+                    const card = document.createElement('div');
+                    card.className = `card domain-card ${isHighRisk ? 'high-risk' : ''}`;
+                    card.dataset.domain = domain.name;
+                    
+                    let severityColor = "#28a745"; // Default green
+                    
+                    // Set severity color
+                    switch (domain.severity) {
+                        case "None":
+                            severityColor = "#28a745"; // Green
+                            break;
+                        case "Slight/Rare":
+                            severityColor = "#17a2b8"; // Teal
+                            break;
+                        case "Mild":
+                            severityColor = "#ffc107"; // Yellow
+                            break;
+                        case "Moderate":
+                            severityColor = "#fd7e14"; // Orange
+                            break;
+                        case "Severe":
+                            severityColor = "#dc3545"; // Red
+                            break;
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">${domain.name}</h6>
+                            <span class="severity-badge" style="background-color: ${severityColor}">${domain.severity}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="chart-container me-3">
+                                    <canvas id="chart-${domain.name.replace(/\s+/g, '-')}"></canvas>
+                                    <div class="chart-percentage">${domain.risk_percentage}%</div>
+                                </div>
+                                <div>
+                                    <p class="mb-1"><small>Total Score: ${domain.total}</small></p>
+                                    <p class="mb-0">
+                                        <small class="text-muted">Click to select for Level 2 assessment</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    card.addEventListener('click', function() {
+                        selectDomain(domain.name);
+                    });
+                    
+                    cardCol.appendChild(card);
+                    row.appendChild(cardCol);
+                    
+                    // Create chart
+                    setTimeout(() => {
+                        const ctx = document.getElementById(`chart-${domain.name.replace(/\s+/g, '-')}`).getContext('2d');
+                        const chart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                datasets: [{
+                                    data: [domain.risk_percentage, 100 - domain.risk_percentage],
+                                    backgroundColor: [
+                                        severityColor,
+                                        '#f2f2f2'
+                                    ],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                cutout: '70%',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    },
+                                    tooltip: {
+                                        enabled: false
+                                    }
+                                }
+                            }
+                        });
+                    }, 0);
+                });
+            }
+
+            // Populate domain select dropdown
+            function populateDomainSelect(domains) {
+                // Clear existing options except the first one
+                while (domainSelect.options.length > 1) {
+                    domainSelect.remove(1);
+                }
+                
+                // Sort domains by risk percentage (highest first)
+                domains.sort((a, b) => b.risk_percentage - a.risk_percentage);
+                
+                // Create optgroup for high-risk domains (>= 50%)
+                const highRiskOptgroup = document.createElement('optgroup');
+                highRiskOptgroup.label = 'High Risk Domains';
+                
+                // Create optgroup for other domains
+                const otherOptgroup = document.createElement('optgroup');
+                otherOptgroup.label = 'Other Domains';
+                
+                // Add options to optgroups
+                domains.forEach(domain => {
+                    const option = document.createElement('option');
+                    option.value = domain.name;
+                    option.textContent = `${domain.name} (${domain.risk_percentage}%)`;
+                    
+                    if (domain.risk_percentage >= 50) {
+                        highRiskOptgroup.appendChild(option);
+                    } else {
+                        otherOptgroup.appendChild(option);
+                    }
+                });
+                
+                // Add optgroups to select
+                if (highRiskOptgroup.childElementCount > 0) {
+                    domainSelect.appendChild(highRiskOptgroup);
+                }
+                
+                if (otherOptgroup.childElementCount > 0) {
+                    domainSelect.appendChild(otherOptgroup);
+                }
+            }
+
+            // Select domain for assessment
+            function selectDomain(domainName) {
+                // Set selected domain
+                selectedDomain = domainName;
+                
+                // Update domain select dropdown
+                domainSelect.value = domainName;
+                
+                // Update selected domain in UI
+                document.querySelectorAll('.domain-card').forEach(card => {
+                    if (card.dataset.domain === domainName) {
+                        card.classList.add('selected-domain');
+                    } else {
+                        card.classList.remove('selected-domain');
+                    }
+                });
+                
+                // Update assessment form
+                selectedDomainTitle.textContent = `${domainName} Assessment`;
+                
+                // Update assessment info
+                const tool = assessmentTools[domainName];
+                if (tool) {
+                    assessmentInfo.innerHTML = `
+                        <h6>${tool.name}</h6>
+                        <p>${tool.description}</p>
+                        <small>This assessment contains ${tool.questions.length} questions. Select a therapy session to begin.</small>
+                    `;
+                } else {
+                    assessmentInfo.innerHTML = `
+                        <p class="mb-0">Select a therapy session to begin assessment for ${domainName}</p>
+                    `;
+                }
+                
+                // Show assessment form, hide no selection message
+                noSelectionMessage.style.display = 'none';
+                assessmentForm.style.display = 'block';
+                assessmentResults.style.display = 'none';
+                
+                // Load therapy sessions
+                loadTherapySessions();
+            }
+
+            // Load therapy session files
+            function loadTherapySessions() {
+                // Fetch list of therapy session files
+                fetch('/api/therapy-sessions')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Clear existing options
+                        while (sessionSelect.options.length > 1) {
+                            sessionSelect.remove(1);
+                        }
+                        
+                        if (data.files && data.files.length > 0) {
+                            data.files.forEach(file => {
+                                const option = document.createElement('option');
+                                option.value = file;
+                                
+                                // Format display name
+                                const dateMatch = file.match(/\d{8}/);
+                                let displayName = file;
+                                
+                                if (dateMatch) {
+                                    const dateStr = dateMatch[0];
+                                    const year = dateStr.substring(0, 4);
+                                    const month = dateStr.substring(4, 6);
+                                    const day = dateStr.substring(6, 8);
+                                    
+                                    const date = new Date(year, month-1, day);
+                                    displayName = `Session - ${date.toLocaleDateString()}`;
+                                }
+                                
+                                option.textContent = displayName;
+                                sessionSelect.appendChild(option);
+                            });
+                        } else {
+                            const option = document.createElement('option');
+                            option.disabled = true;
+                            option.textContent = 'No therapy sessions available';
+                            sessionSelect.appendChild(option);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading therapy sessions:', error);
+                        const option = document.createElement('option');
+                        option.disabled = true;
+                        option.textContent = 'Error loading therapy sessions';
+                        sessionSelect.appendChild(option);
+                    });
+            }
+
+            // Session select change event
+            sessionSelect.addEventListener('change', function() {
+                selectedSession = this.value;
+                
+                if (selectedSession) {
+                    // Load session preview
+                    fetch(`/api/therapy-session?file=${selectedSession}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.content) {
+                                // Show preview
+                                sessionPreview.style.display = 'block';
+                                sessionPreview.innerHTML = `<p><strong>Preview:</strong></p><p>${data.content.substring(0, 200)}...</p>`;
+                            } else {
+                                sessionPreview.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading session preview:', error);
+                            sessionPreview.style.display = 'none';
+                        });
+                } else {
+                    sessionPreview.style.display = 'none';
+                }
+            });
+
+            // Domain select change event
+            domainSelect.addEventListener('change', function() {
+                if (this.value) {
+                    selectDomain(this.value);
+                }
+            });
+
+            // Run assessment button
+            runAssessmentBtn.addEventListener('click', function() {
+                if (!selectedDomain) {
+                    alert('Please select a domain first.');
+                    return;
+                }
+                
+                if (!selectedSession) {
+                    alert('Please select a therapy session first.');
+                    return;
+                }
+                
+                // Hide form, show loader
+                assessmentForm.style.display = 'none';
+                assessmentLoader.style.display = 'block';
+                
+                // Call API to run assessment
+                fetch('/api/run-assessment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        domain: selectedDomain,
+                        session: selectedSession,
+                        tool: assessmentTools[selectedDomain].name
+                    })
+                })
+                    .then(response => {
+                        // First check if response is ok (status in 200-299 range)
+                        if (!response.ok) {
+                            throw new Error(`Server responded with status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Hide loader
+                        assessmentLoader.style.display = 'none';
+                        
+                        // Check for error in the response
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        // Validate the data structure
+                        if (!data || !Array.isArray(data.scores)) {
+                            throw new Error('Invalid response format from server');
+                        }
+                        
+                        // Display results
+                        displayAssessmentResults(data);
+                    })
+                    .catch(error => {
+                        console.error('Error running assessment:', error);
+                        
+                        // Hide loader
+                        assessmentLoader.style.display = 'none';
+                        
+                        // Display error message
+                        assessmentItems.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>Error Running Assessment</h6>
+                                <p>${error.message || 'An unknown error occurred while running the assessment.'}</p>
+                                <p class="mb-0">Please try again or select a different session.</p>
+                            </div>
+                        `;
+                        
+                        // Show results container with error
+                        assessmentResults.style.display = 'block';
+                    });
+            });
+
+            // Back to form button
+            backToFormBtn.addEventListener('click', function() {
+                assessmentResults.style.display = 'none';
+                assessmentForm.style.display = 'block';
+            });
+
+            // Display assessment results
+            function displayAssessmentResults(results) {
+                // Check if results is null or undefined
+                if (!results) {
+                    // Display error message
+                    assessmentLoader.style.display = 'none';
+                    assessmentItems.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Error Processing Results</h6>
+                            <p>No assessment results were returned. Please try again or select a different session.</p>
+                        </div>
+                    `;
+                    assessmentResults.style.display = 'block';
+                    return;
+                }
+
+                // Check if scores array exists
+                if (!results.scores || !Array.isArray(results.scores)) {
+                    // Display error message
+                    assessmentLoader.style.display = 'none';
+                    assessmentItems.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Invalid Results Format</h6>
+                            <p>The assessment results were not in the expected format. Please try again.</p>
+                            <pre class="mt-3 p-2 bg-light">${JSON.stringify(results, null, 2)}</pre>
+                        </div>
+                    `;
+                    assessmentResults.style.display = 'block';
+                    return;
+                }
+
+                // Set title
+                assessmentResultTitle.textContent = `${selectedDomain} Assessment Results`;
+                
+                // Get assessment tool
+                const tool = assessmentTools[selectedDomain];
+                if (!tool) {
+                    assessmentLoader.style.display = 'none';
+                    assessmentItems.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Configuration Error</h6>
+                            <p>No assessment tool configuration found for ${selectedDomain}.</p>
+                        </div>
+                    `;
+                    assessmentResults.style.display = 'block';
+                    return;
+                }
+                
+                // Calculate total score (safely)
+                const totalScore = results.scores.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+                
+                // Determine severity level with proper fallback
+                let severityLevel = null;
+                
+                // First try to find the matching severity level
+                for (const level of tool.interpretation) {
+                    if (totalScore >= level.range[0] && totalScore <= level.range[1]) {
+                        severityLevel = level;
+                        break;
+                    }
+                }
+                
+                // If no matching level found, use default values
+                if (!severityLevel) {
+                    console.warn(`No severity level found for score ${totalScore} in domain ${selectedDomain}`);
+                    // Use default values
+                    severityLevel = {
+                        level: "Unknown",
+                        color: "#6c757d", // Grey as default
+                        description: "Score outside expected range"
+                    };
+                    
+                    // Find the closest range
+                    let closestLevel = tool.interpretation[0];
+                    let minDistance = Math.abs(totalScore - (tool.interpretation[0].range[0] + tool.interpretation[0].range[1]) / 2);
+                    
+                    for (const level of tool.interpretation) {
+                        const levelMidpoint = (level.range[0] + level.range[1]) / 2;
+                        const distance = Math.abs(totalScore - levelMidpoint);
+                        
+                        if (distance < minDistance) {
+                            closestLevel = level;
+                            minDistance = distance;
+                        }
+                    }
+                    
+                    // If score is above all ranges, use the highest severity
+                    if (totalScore > tool.interpretation[tool.interpretation.length - 1].range[1]) {
+                        severityLevel = {...tool.interpretation[tool.interpretation.length - 1]};
+                        severityLevel.level += " (score above range)";
+                    } 
+                    // If score is below all ranges, use the lowest severity
+                    else if (totalScore < tool.interpretation[0].range[0]) {
+                        severityLevel = {...tool.interpretation[0]};
+                        severityLevel.level += " (score below range)";
+                    }
+                    // Otherwise use the closest level
+                    else {
+                        severityLevel = {...closestLevel};
+                        severityLevel.level += " (approximate)";
+                    }
+                }
+                
+                // Display summary
+                assessmentSummary.className = 'alert-section';
+                assessmentSummary.style.borderLeft = `5px solid ${severityLevel.color}`;
+                assessmentSummary.style.backgroundColor = `${severityLevel.color}10`;
+                
+                assessmentSummary.innerHTML = `
+                    <h6>Assessment Summary: ${tool.name}</h6>
+                    <p class="mb-1">Total Score: <strong>${totalScore}/${tool.maxScore}</strong></p>
+                    <p class="mb-1">Interpretation: <strong>${severityLevel.level}</strong></p>
+                    <p class="mb-0">Based on analysis of therapy session: ${selectedSession}</p>
+                `;
+                
+                // Display score
+                const scorePercentage = (totalScore / tool.maxScore) * 100;
+                
+                assessmentScoreDisplay.innerHTML = `
+                    <div class="progress-label">
+                        <span>Score: ${totalScore}/${tool.maxScore}</span>
+                        <span>${Math.round(scorePercentage)}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar" role="progressbar" style="width: ${scorePercentage}%; background-color: ${severityLevel.color};" aria-valuenow="${scorePercentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                `;
+                
+                // Display assessment items
+                assessmentItems.innerHTML = '';
+                
+                // Ensure results.evidence exists and is an array
+                const evidence = Array.isArray(results.evidence) ? results.evidence : [];
+                
+                tool.questions.forEach((question, index) => {
+                    const score = index < results.scores.length ? (Number.isFinite(results.scores[index]) ? results.scores[index] : 0) : 0;
+                    const evidenceText = index < evidence.length ? (evidence[index] || 'No specific evidence found.') : 'No specific evidence found.';
+                    
+                    let responseColor;
+                    if (score === 0) {
+                        responseColor = '#28a745'; // Green
+                    } else if (score === 1) {
+                        responseColor = '#17a2b8'; // Teal
+                    } else if (score === 2) {
+                        responseColor = '#ffc107'; // Yellow
+                    } else if (score === 3) {
+                        responseColor = '#fd7e14'; // Orange
+                    } else {
+                        responseColor = '#dc3545'; // Red
+                    }
+                    
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'assessment-item';
+                    itemElement.style.borderLeft = `3px solid ${responseColor}`;
+                    
+                    itemElement.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>Q${index + 1}:</strong> ${question}
+                            </div>
+                            <div>
+                                <span class="response-highlight" style="background-color: ${responseColor}10; color: ${responseColor}; border: 1px solid ${responseColor}">Score: ${score}</span>
+                            </div>
+                        </div>
+                        <div class="evidence-item">${evidenceText}</div>
+                    `;
+                    
+                    assessmentItems.appendChild(itemElement);
+                });
+                
+                // Show results
+                assessmentResults.style.display = 'block';
+            }
+
+            // Initialize
+            loadAssessmentFiles();
+        });
+    </script>
+</body>
+
+</html>

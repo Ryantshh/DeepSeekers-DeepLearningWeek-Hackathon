@@ -1,0 +1,62 @@
+[
+    {
+        "name": "John Smith",
+        "specialise": "Family Therapy, Children",
+        "quote": "I believe that family is the foundation of happiness.",
+        "imageUrl": "../assets/therapists/1.png"
+    },
+    {
+        "name": "Sarah Lee",
+        "specialise": "Anxiety, Stress Management",
+        "quote": "Your mind is your home—let's make it a peaceful one.",
+        "imageUrl": "../assets/therapists/2.png"
+    },
+    {
+        "name": "Michael Tan",
+        "specialise": "Depression, Mood Disorders",
+        "quote": "Healing starts with understanding yourself.",
+        "imageUrl": "../assets/therapists/3.png"
+    },
+    {
+        "name": "Emma Wong",
+        "specialise": "Relationship Counseling, Couples Therapy",
+        "quote": "Love is a journey we navigate together.",
+        "imageUrl": "../assets/therapists/4.png"
+    },
+    {
+        "name": "David Lim",
+        "specialise": "Cognitive Behavioral Therapy (CBT), Self-Esteem",
+        "quote": "Small steps lead to big changes in life.",
+        "imageUrl": "../assets/therapists/5.png"
+    },
+    {
+        "name": "Jessica Chan",
+        "specialise": "Trauma Recovery, PTSD",
+        "quote": "You are stronger than the experiences that tried to break you.",
+        "imageUrl": "../assets/therapists/6.png"
+    },
+    {
+        "name": "James Koh",
+        "specialise": "Addiction Recovery, Behavioral Therapy",
+        "quote": "Every new day is another chance to change your story.",
+        "imageUrl": "../assets/therapists/7.png"
+    },
+    {
+        "name": "Olivia Ng",
+        "specialise": "Child Development, Autism Spectrum Disorders",
+        "quote": "Every child has a unique way of seeing the world.",
+        "imageUrl": "../assets/therapists/8.png"
+    },
+    {
+        "name": "Benjamin Ho",
+        "specialise": "Workplace Stress, Career Counseling",
+        "quote": "Balance and purpose are the keys to a fulfilling career.",
+        "imageUrl": "../assets/therapists/9.png"
+    },
+    {
+        "name": "Sophia Teo",
+        "specialise": "Mindfulness, Holistic Therapy",
+        "quote": "The present moment is where true peace resides.",
+        "imageUrl": "../assets/therapists/10.png"
+    }
+]
