@@ -1,0 +1,217 @@
+{
+  "domains": [
+    {
+      "name": "Depression",
+      "scores": [
+        2,
+        2
+      ],
+      "evidence": [
+        "Me: Hi i feel like death",
+        "Me: idk just want to die"
+      ],
+      "total": 4,
+      "risk_percentage": 50.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Anger",
+      "scores": [
+        2
+      ],
+      "evidence": [
+        "Me: idk feel like death"
+      ],
+      "total": 2,
+      "risk_percentage": 50.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Mania",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No evidence of sleeping less than usual, but still have a lot of energy",
+        "No evidence of starting lots more projects than usual or doing more risky things than usual"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Anxiety",
+      "scores": [
+        2,
+        0,
+        0
+      ],
+      "evidence": [
+        "Me: tiring and lomesome",
+        "No evidence of feeling nervous, anxious, frightened, worried, or on edge",
+        "No evidence of feeling panic or being frightened"
+      ],
+      "total": 2,
+      "risk_percentage": 16.7,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Somatic Symptoms",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No evidence of unexplained aches and pains",
+        "No evidence of feeling that your illnesses are not being taken seriously enough"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Suicidal Ideation",
+      "scores": [
+        4
+      ],
+      "evidence": [
+        "Me: idk just want to die"
+      ],
+      "total": 4,
+      "risk_percentage": 100.0,
+      "severity": "Severe",
+      "clinical_concern": true
+    },
+    {
+      "name": "Psychosis",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No evidence of hearing things other people couldn't hear, such as voices",
+        "No evidence of feeling that someone could hear your thoughts, or that you could hear what another person was thinking"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Sleep Problems",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No evidence of problems with sleep that affected your sleep quality"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Memory",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No evidence of problems with memory"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Repetitive Thoughts and Behaviors",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No evidence of unpleasant thoughts, urges, or images that repeatedly enter your mind",
+        "No evidence of feeling driven to perform certain behaviors or mental acts over and over again"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Dissociation",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No evidence of feeling detached or distant from yourself, your body, your physical surroundings, or your memories"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Personality Functioning",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No evidence of not knowing who you really are or what you want out of life",
+        "No evidence of not feeling close to other people or enjoying relationships"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Substance Use",
+      "scores": [
+        0,
+        0,
+        0
+      ],
+      "evidence": [
+        "No evidence of drinking at least 4 drinks of any kind of alcohol in a single day",
+        "No evidence of smoking any cigarettes, a cigar, or pipe, or using snuff or chewing tobacco",
+        "No evidence of using any of the following medicines on your own"
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    }
+  ],
+  "summary": {
+    "clinical_concerns": [
+      "Depression",
+      "Anger",
+      "Anxiety",
+      "Suicidal Ideation"
+    ],
+    "confidence_levels": {
+      "Depression": "High",
+      "Anger": "High",
+      "Mania": "High",
+      "Anxiety": "High",
+      "Somatic Symptoms": "High",
+      "Suicidal Ideation": "High",
+      "Psychosis": "High",
+      "Sleep Problems": "High",
+      "Memory": "High",
+      "Repetitive Thoughts and Behaviors": "High",
+      "Dissociation": "High",
+      "Personality Functioning": "High",
+      "Substance Use": "High"
+    },
+    "notes": []
+  }
+}
