@@ -1,0 +1,217 @@
+{
+  "domains": [
+    {
+      "name": "Depression",
+      "scores": [
+        2,
+        2
+      ],
+      "evidence": [
+        "I don\u2019t see the point in anything anymore.",
+        "I feel completely empty."
+      ],
+      "total": 4,
+      "risk_percentage": 50.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Anger",
+      "scores": [
+        1
+      ],
+      "evidence": [
+        "I feel like I\u2019m just existing, not living."
+      ],
+      "total": 1,
+      "risk_percentage": 25.0,
+      "severity": "Slight/Rare",
+      "clinical_concern": false
+    },
+    {
+      "name": "Mania",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Anxiety",
+      "scores": [
+        2,
+        0,
+        0
+      ],
+      "evidence": [
+        "I feel like I\u2019m just going through the motions can be exhausting.",
+        "I just don\u2019t want to feel like this anymore.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 2,
+      "risk_percentage": 16.7,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Somatic Symptoms",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Suicidal Ideation",
+      "scores": [
+        4
+      ],
+      "evidence": [
+        "Sometimes I think it would be easier if I weren\u2019t here."
+      ],
+      "total": 4,
+      "risk_percentage": 100.0,
+      "severity": "Severe",
+      "clinical_concern": true
+    },
+    {
+      "name": "Psychosis",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Sleep Problems",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Memory",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Repetitive Thoughts and Behaviors",
+      "scores": [
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Dissociation",
+      "scores": [
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    },
+    {
+      "name": "Personality Functioning",
+      "scores": [
+        2,
+        0
+      ],
+      "evidence": [
+        "I don\u2019t know if I can talk to anyone.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 2,
+      "risk_percentage": 25.0,
+      "severity": "Mild",
+      "clinical_concern": true
+    },
+    {
+      "name": "Substance Use",
+      "scores": [
+        0,
+        0,
+        0
+      ],
+      "evidence": [
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text.",
+        "No explicit evidence found in the text."
+      ],
+      "total": 0,
+      "risk_percentage": 0.0,
+      "severity": "None",
+      "clinical_concern": false
+    }
+  ],
+  "summary": {
+    "clinical_concerns": [
+      "Depression",
+      "Anxiety",
+      "Suicidal Ideation",
+      "Personality Functioning"
+    ],
+    "confidence_levels": {
+      "Depression": "High",
+      "Anger": "High",
+      "Mania": "Low",
+      "Anxiety": "Medium",
+      "Somatic Symptoms": "Low",
+      "Suicidal Ideation": "High",
+      "Psychosis": "Low",
+      "Sleep Problems": "Low",
+      "Memory": "Low",
+      "Repetitive Thoughts and Behaviors": "Low",
+      "Dissociation": "Low",
+      "Personality Functioning": "Medium",
+      "Substance Use": "Low"
+    },
+    "notes": []
+  }
+}

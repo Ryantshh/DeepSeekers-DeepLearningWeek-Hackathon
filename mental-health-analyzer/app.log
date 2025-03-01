@@ -1,0 +1,17 @@
+API request failed with status code 429: {"error":{"message":"Rate limit reached for model `llama3-8b-8192` in organization `org_01jn6zj7r5e6wbfkg8xr7zxtnt` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 4271, Requested 2095. Please try again in 3.655999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+Error during analysis: API request failed with status code 429: {"error":{"message":"Rate limit reached for model `llama3-8b-8192` in organization `org_01jn6zj7r5e6wbfkg8xr7zxtnt` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 4271, Requested 2095. Please try again in 3.655999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+Traceback (most recent call last):
+  File "c:\wamp64\www\DLweek\mental-health-analyzer\app.py", line 202, in analyze
+    result = analyze_text(text)
+             ^^^^^^^^^^^^^^^^^^
+  File "c:\wamp64\www\DLweek\mental-health-analyzer\app.py", line 349, in analyze_text
+    raise Exception(error_msg)
+Exception: API request failed with status code 429: {"error":{"message":"Rate limit reached for model `llama3-8b-8192` in organization `org_01jn6zj7r5e6wbfkg8xr7zxtnt` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 4271, Requested 2095. Please try again in 3.655999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+
+Error running assessment: API request failed with status code 400: {"error":{"message":"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.","type":"invalid_request_error","code":"json_validate_failed","failed_generation":"{\n   \"scores\": [\n      2,\n      1,\n      1,\n      0,\n      0\n   ],\n   \"evidence\": [\n      \"Sometimes I think people would be better off if I wasn't around.\" (score 2 for 1),\n      \"I just sometimes think the world wouldn't miss me if I was gone.\" (score 1 for 2),\n      \"I wouldn't do anything about it though.\" (score 1 for 3),\n      \"Not actively.\" (score 0 for 4),\n      \"No\" (score 0 for 5)\n   ]\n}"}}
+
+Error running assessment: API request failed with status code 400: {"error":{"message":"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.","type":"invalid_request_error","code":"json_validate_failed","failed_generation":"{\n   \"scores\": [\n      2,\n      1,\n      1,\n      0,\n      0\n   ],\n   \"evidence\": [\n      \"Sometimes I think people would be better off if I wasn't around.\" (score 2),\n      \"I just sometimes think the world wouldn't miss me if I was gone.\" (score 1),\n      \"I wouldn't do anything about it though.\" (score 1),\n      \"Not actively\" (score 0),\n      \"Not mentioned\" (score 0)\n   ]\n}"}}
+
