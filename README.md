@@ -1,7 +1,7 @@
 # Quickstart tutorial (Follow all steps to run via localhost)
 
 ## Frontend
-1. Download all the stuff and run 
+1. In frontend directory, download all the stuff and run 
 ```
 cd frontend
 npm install
