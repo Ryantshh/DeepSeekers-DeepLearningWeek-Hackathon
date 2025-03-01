@@ -1,7 +1,7 @@
 # Quickstart tutorial
 
 ## Frontend
-1. Download all the stuff
+1. Download all the stuff and run 
 ```
 cd frontend
 npm install
