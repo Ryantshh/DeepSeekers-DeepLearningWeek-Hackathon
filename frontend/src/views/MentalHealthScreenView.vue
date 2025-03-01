@@ -19,6 +19,7 @@
           <button
             type="submit"
             class="w-full bg-blue-600 text-white rounded-full py-3 font-medium hover:bg-blue-700 transition"
+            ref="analyzeButton"
           >
             Analyze My Text
           </button>
@@ -109,8 +110,8 @@
   </div>
 </template>
   
-  <script setup>
-import { ref, computed } from 'vue'
+<script setup>
+import { ref, computed, onMounted, nextTick } from 'vue'
 import axios from 'axios'
 import DomainCard from './DomainCard.vue'
 
@@ -119,6 +120,7 @@ const analyzing = ref(false)
 const analysisCompleted = ref(false)
 const domains = ref([])
 const showOtherDomains = ref(false)
+const analyzeButton = ref(null)
 
 // A domain is considered a significant (main) concern if:
 // - clinical_concern is true,
@@ -143,9 +145,12 @@ const analyzeText = async () => {
   }
   analyzing.value = true
   try {
-    const response = await axios.post('http://127.0.0.1:5000/analyze', { text: text.value })
+    const response = await axios.post('http://127.0.0.1:5001/analyze', { text: text.value })
     domains.value = response.data.domains
     analysisCompleted.value = true
+    
+    // Save the analysis results to localStorage
+    saveAnalysisToLocalStorage()
   } catch (error) {
     console.error('Error:', error)
     alert('An error occurred during analysis. Please try again.')
@@ -156,6 +161,9 @@ const analyzeText = async () => {
 
 const toggleOtherDomains = () => {
   showOtherDomains.value = !showOtherDomains.value
+  
+  // Save the toggle state to localStorage
+  localStorage.setItem('showOtherDomains', JSON.stringify(showOtherDomains.value))
 }
 
 const resetAssessment = () => {
@@ -163,7 +171,55 @@ const resetAssessment = () => {
   analysisCompleted.value = false
   domains.value = []
   showOtherDomains.value = false
+  
+  // Clear the saved analysis from localStorage
+  localStorage.removeItem('analysisResults')
+  localStorage.removeItem('showOtherDomains')
+  localStorage.removeItem('analysisCompleted')
+  
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
-</script>
+
+// Function to save analysis results to localStorage
+const saveAnalysisToLocalStorage = () => {
+  localStorage.setItem('analysisResults', JSON.stringify(domains.value))
+  localStorage.setItem('analysisCompleted', JSON.stringify(analysisCompleted.value))
+  localStorage.setItem('showOtherDomains', JSON.stringify(showOtherDomains.value))
+}
+
+// Load saved data from localStorage on mount
+onMounted(async () => {
+  // Try to load previous analysis results first
+  const savedAnalysis = localStorage.getItem('analysisResults')
+  const savedAnalysisCompleted = localStorage.getItem('analysisCompleted')
+  const savedShowOtherDomains = localStorage.getItem('showOtherDomains')
   
+  if (savedAnalysis && savedAnalysisCompleted) {
+    // Restore previous analysis results
+    domains.value = JSON.parse(savedAnalysis)
+    analysisCompleted.value = JSON.parse(savedAnalysisCompleted)
+    if (savedShowOtherDomains) {
+      showOtherDomains.value = JSON.parse(savedShowOtherDomains)
+    }
+    
+    // No need to trigger a new analysis
+    return
+  }
+  
+  // If no previous analysis, try to load conversation history and analyze
+  const savedConversation = localStorage.getItem('conversationHistory')
+  if (savedConversation) {
+    text.value = savedConversation
+    
+    // Allow the DOM to update with the text value
+    await nextTick()
+    
+    // Auto-trigger the analysis after a short delay to ensure UI is ready
+    setTimeout(() => {
+      if (analyzeButton.value) {
+        analyzeButton.value.click()
+      }
+    }, 500)
+  }
+})
+</script>

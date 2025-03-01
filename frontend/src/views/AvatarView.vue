@@ -192,6 +192,30 @@
           </div>
         </div>
       </div>
+
+      <!-- Counter Button Section -->
+      <div class="mt-6 text-center">
+        <button
+          @click="redirectToAssessment"
+          :disabled="userPromptCount < requiredPrompts"
+          :class="[
+            'py-3 px-6 rounded-lg font-medium text-white transition-all duration-200 w-full md:w-auto',
+            userPromptCount >= requiredPrompts 
+              ? 'bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
+              : 'bg-blue-400 cursor-not-allowed'
+          ]"
+        >
+          <span v-if="userPromptCount < requiredPrompts">
+            {{ requiredPrompts - userPromptCount }} more prompts to get your mental health assessment
+          </span>
+          <span v-else class="flex items-center justify-center">
+            Click here to get the right help!
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -199,6 +223,11 @@
 <script setup>
 import maleNeutral from '../assets/neutral_male.png'
 import femaleNeutral from '../assets/neutral_female.png'
+import { ref, watch, nextTick, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+
+const router = useRouter()
 
 // Use only the static (neutral) image for each gender
 const staticImage = {
@@ -206,9 +235,7 @@ const staticImage = {
   female: femaleNeutral
 }
 
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
-
+// Modified/added code for persistence
 const gender = ref('female')
 const newMessage = ref('')
 const messages = ref([
@@ -224,6 +251,43 @@ const recognition = ref(null)
 const voiceResponseEnabled = ref(false)
 const speechSynthesis = window.speechSynthesis
 let currentUtterance = null
+
+// Prompt counter functionality
+const userPromptCount = ref(0)
+const requiredPrompts = 10
+
+// Save chat state to localStorage
+const saveChatState = () => {
+  const chatState = {
+    messages: messages.value,
+    gender: gender.value,
+    userPromptCount: userPromptCount.value,
+    voiceResponseEnabled: voiceResponseEnabled.value
+  }
+  localStorage.setItem('chatState', JSON.stringify(chatState))
+}
+
+// Watch for changes in the state that should be persisted
+watch([messages, gender, userPromptCount, voiceResponseEnabled], () => {
+  saveChatState()
+}, { deep: true })
+
+// Computed property for conversation history
+const conversationHistory = computed(() => {
+  return messages.value
+    .map(message => `${message.sender === 'user' ? 'Me' : 'AI'}: ${message.text}`)
+    .join('\n\n')
+})
+
+// Function to redirect to mental health assessment
+const redirectToAssessment = () => {
+  if (userPromptCount.value >= requiredPrompts) {
+    // Store conversation history in localStorage to access it from the assessment page
+    localStorage.setItem('conversationHistory', conversationHistory.value)
+    // Navigate to the assessment page
+    router.push('/mentalhealthscreen')
+  }
+}
 
 // Initialize speech recognition
 const initSpeechRecognition = () => {
@@ -346,12 +410,26 @@ const loadVoices = () => {
   })
 }
 
+// Modified onMounted to restore previous chat state
 onMounted(async () => {
+  // Try to restore previous chat state
+  const savedChatState = localStorage.getItem('chatState')
+  if (savedChatState) {
+    const parsedState = JSON.parse(savedChatState)
+    // Restore the chat state
+    messages.value = parsedState.messages
+    gender.value = parsedState.gender
+    userPromptCount.value = parsedState.userPromptCount
+    voiceResponseEnabled.value = parsedState.voiceResponseEnabled
+  }
+  
+  // Initialize other components
   scrollToBottom()
   initSpeechRecognition()
   await loadVoices()
 })
 
+// Add a cleanup function for component unmounting that keeps the chat state
 onUnmounted(() => {
   if (speechSynthesis.speaking) {
     speechSynthesis.cancel()
@@ -359,6 +437,7 @@ onUnmounted(() => {
   if (recognition.value && isListening.value) {
     recognition.value.stop()
   }
+  // Note: We're not clearing the chat state here
 })
 
 watch(
@@ -377,6 +456,9 @@ const sendMessage = async () => {
     sender: 'user',
     text: userMessage,
   })
+
+  // Increment the prompt counter when user sends a message
+  userPromptCount.value++
 
   newMessage.value = ''
   isLoading.value = true

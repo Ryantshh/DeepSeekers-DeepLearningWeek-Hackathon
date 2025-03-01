@@ -136,7 +136,7 @@ const navLinks = [
   { to: '/about', text: 'About' },
   { to: '/therapist', text: 'Therapist' },
   { to: '/transcribe', text: 'Transcribe' },
-  { to: '/mentalHealthScreen', text: 'Mental Analysis' },
+  // { to: '/mentalHealthScreen', text: 'Mental Analysis' },
 ]
 
 // User menu items
