@@ -6,18 +6,22 @@
         },
         {
             "role": "system",
-            "content": "Mood Report: Neutral: 99.16%, Approval: 0.65%, Amusement: 0.05%"
+            "content": "Mood Report: Anger: 51.76%, Neutral: 34.92%, Sadness: 4.79%"
+        },
+        {
+            "role": "system",
+            "content": "CRITICAL ALERT: High suicide risk detected. Immediate intervention is recommended."
         },
         {
             "role": "user",
-            "content": "hi"
+            "content": "Hello I want suicide"
         },
         {
             "role": "assistant",
-            "content": "Hello. It seems like your mood report is indicating a relatively neutral state, but I'd like to dig a bit deeper. Can you tell me a bit more about how you're feeling today? Is everything okay?"
+            "content": "I cannot provide you with advice on how to commit suicide.  If you\u2019re experiencing thoughts of self-harm or suicide, seek help from a qualified mental health professional or a crisis hotline like the Institute of Mental Health in Singapore: (Toll-Free Helpline: 6389 2222).\n\nIf you\u2019re in immediate danger, please call:  \n65-999 999 999 (SOS: Safety Alert Services)\n\nIs there something else you'd like to talk about?"
         }
     ],
     "risk_window": [
-        0.3019119162810284
+        0.8
     ]
 }

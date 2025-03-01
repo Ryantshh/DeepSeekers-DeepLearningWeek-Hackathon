@@ -24,11 +24,15 @@ const router = createRouter({
       component: () => import('../views/TranscribeView.vue'),
     },
     {
+      path: '/mentalHealthScreen',
+      name: 'mentalHealthScreen',
+      component: () => import('../views/MentalHealthScreenView.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('../views/NotFoundView.vue'),
     },
-    { path: '/:pathMatch(.*)*', component: NotFound }, // Catch-all for 404
   ],
 })
 

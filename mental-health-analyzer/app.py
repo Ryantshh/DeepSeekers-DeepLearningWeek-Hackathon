@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 # Add this at the beginning with other imports
 from therapist_routes import register_therapist_routes
+from flask_cors import CORS
 
 # Add this after app initialization
 # Register therapist routes
@@ -24,6 +25,7 @@ load_dotenv()
 
 app = Flask(__name__)
 register_therapist_routes(app)
+CORS(app)
 # Configure Groq API
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -534,4 +536,4 @@ def analyze_text(text):
         raise Exception(error_msg)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)

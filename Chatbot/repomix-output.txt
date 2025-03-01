@@ -1,0 +1,683 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+brain_of_the_doctor.py
+conversation_history.json
+gradio_app.py
+mood_detection.py
+user_prompts.json
+voice_of_the_doctor.py
+voice_of_the_patient.py
+
+================================================================
+Files
+================================================================
+
+================
+File: brain_of_the_doctor.py
+================
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+from groq import Groq
+from dotenv import load_dotenv
+load_dotenv()
+
+
+
+
+def chat_with_query(messages, model):
+    """
+    Uses the Groq API to generate a chat response based on a list of messages.
+    Each message is a dict with 'role' in ['system', 'user', 'assistant']
+    and a 'content' string.
+    """
+    client = Groq()
+    chat_completion = client.chat.completions.create(
+        messages=messages,
+        model=model
+    )
+    return chat_completion.choices[0].message.content
+
+================
+File: conversation_history.json
+================
+{
+    "messages": [
+        {
+            "role": "system",
+            "content": "You are a professional, empathetic doctor providing concise, safe, and clear advice. Respond with empathy for mental health issues, suggest possible causes for physical ailments, and always advise consulting a qualified professional when needed. Keep your answers brief within 4-6 sentences. You are based in Singapore and part of the Institute of Mental Health in Singapore."
+        },
+        {
+            "role": "system",
+            "content": "Mood Report: Anger: 51.76%, Neutral: 34.92%, Sadness: 4.79%"
+        },
+        {
+            "role": "system",
+            "content": "CRITICAL ALERT: High suicide risk detected. Immediate intervention is recommended."
+        },
+        {
+            "role": "user",
+            "content": "Hello I want suicide"
+        },
+        {
+            "role": "assistant",
+            "content": "I cannot provide you with advice on how to commit suicide.  If you\u2019re experiencing thoughts of self-harm or suicide, seek help from a qualified mental health professional or a crisis hotline like the Institute of Mental Health in Singapore: (Toll-Free Helpline: 6389 2222).\n\nIf you\u2019re in immediate danger, please call:  \n65-999 999 999 (SOS: Safety Alert Services)\n\nIs there something else you'd like to talk about?"
+        }
+    ],
+    "risk_window": [
+        0.8
+    ]
+}
+
+================
+File: gradio_app.py
+================
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+import gradio as gr
+import json
+import torch
+import time
+import requests
+import numpy as np
+import re
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from mood_detection import text_to_mood  # your existing text_to_mood function
+
+from voice_of_the_patient import transcribe_with_groq
+from voice_of_the_doctor import text_to_speech_with_elevenlabs
+from brain_of_the_doctor import chat_with_query
+
+hf_token = os.environ.get("HF_TOKEN")
+
+#####################################
+# Helper function to process mood report CSV
+#####################################
+def process_mood_report(report_str):
+    lines = report_str.strip().splitlines()
+    if len(lines) < 2:
+        return "Invalid mood report format"
+    header = lines[0]
+    data_line = lines[1]
+    header_fields = header.split(",")
+    data_fields = data_line.split(",")
+    emotions = header_fields[2:]
+    try:
+        scores = [float(x) for x in data_fields[2:]]
+    except ValueError:
+        return "Error parsing mood scores"
+    top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:3]
+    top_emotions = []
+    for idx in top_indices:
+        emotion = emotions[idx]
+        percentage = scores[idx] * 100
+        top_emotions.append(f"{emotion}: {percentage:.2f}%")
+    return ", ".join(top_emotions)
+
+#####################################
+# Load MentalBERT (general distress model)
+#####################################
+mental_tokenizer = AutoTokenizer.from_pretrained("mental/mental-bert-base-uncased", token=hf_token)
+mental_model = AutoModelForSequenceClassification.from_pretrained("mental/mental-bert-base-uncased", token=hf_token)
+
+def analyze_mental_state(text):
+    inputs = mental_tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    outputs = mental_model(**inputs)
+    probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    distress_prob = probs[0][1].item()
+    return distress_prob
+
+#####################################
+# Load CNN-BiLSTM model for suicide risk (DistilBERT-based)
+#####################################
+cnn_tokenizer = AutoTokenizer.from_pretrained("AventIQ-AI/distilbert-mental-health-prediction", token=hf_token)
+cnn_model = AutoModelForSequenceClassification.from_pretrained("AventIQ-AI/distilbert-mental-health-prediction", token=hf_token)
+
+def analyze_suicide_tendencies(text):
+    inputs = cnn_tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    outputs = cnn_model(**inputs)
+    probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    suicide_risk = probs[0][1].item()
+    return suicide_risk
+
+#####################################
+# Combined Risk Score Calculation (with keyword boosting)
+#####################################
+def combined_risk_score(text, mental_scale=1.0, suicide_threshold=0.5, boost_value=0.8):
+    critical_keywords = ["self harm", "suicide", "kill myself", "end my life", "life has no meaning"]
+    text_lower = text.lower()
+    if any(keyword in text_lower for keyword in critical_keywords):
+        return boost_value
+    mental_score = analyze_mental_state(text) * mental_scale
+    suicide_score = analyze_suicide_tendencies(text)
+    if suicide_score >= suicide_threshold:
+        combined = suicide_score
+    else:
+        combined = (mental_score + suicide_score) / 2
+    return combined
+
+#####################################
+# Sliding window for recent risk scores
+#####################################
+WINDOW_SIZE = 5
+def update_risk_window(window, new_score, window_size=WINDOW_SIZE):
+    window.append(new_score)
+    if len(window) > window_size:
+        window.pop(0)
+    avg_score = sum(window) / len(window)
+    return window, avg_score
+
+RISK_THRESHOLD = 0.7
+
+#####################################
+# Conversation Handling
+#####################################
+SYSTEM_MESSAGE = {
+    "role": "system",
+    "content": (
+        "You are a professional, empathetic doctor providing concise, safe, and clear advice. "
+        "Respond with empathy for mental health issues, suggest possible causes for physical ailments, "
+        "and always advise consulting a qualified professional when needed. "
+        "Keep your answers brief within 4-6 sentences. You are based in Singapore and part of the Institute of Mental Health in Singapore."
+    )
+}
+
+def format_conversation(state):
+    chat_log = []
+    for msg in state["messages"]:
+        if msg["role"] == "user":
+            chat_log.append(f"User: {msg['content']}")
+        elif msg["role"] == "assistant":
+            chat_log.append(f"Doctor: {msg['content']}")
+        elif msg["role"] == "system":
+            chat_log.append(f"(System): {msg['content']}")
+    return "\n".join(chat_log)
+
+def save_conversation_history(state, filename="conversation_history.json"):
+    with open(filename, "w") as f:
+        json.dump(state, f, indent=4)
+
+#####################################
+# Function to export all user prompts as a JSON file
+#####################################
+def export_user_prompts(conversation_state):
+    user_prompts = [msg["content"] for msg in conversation_state.get("messages", []) if msg["role"] == "user"]
+    filename = "user_prompts.json"
+    with open(filename, "w") as f:
+        json.dump(user_prompts, f, indent=4)
+    return filename
+
+#####################################
+# Main Process Function
+#####################################
+def process_inputs(audio_filepath, chat_input, conversation_state):
+    if not conversation_state or not isinstance(conversation_state, dict):
+        conversation_state = {"messages": [SYSTEM_MESSAGE], "risk_window": []}
+    
+    if not audio_filepath and (not chat_input or chat_input.strip() == ""):
+        conversation_text = format_conversation(conversation_state)
+        print("Conversation State:\n", json.dumps(conversation_state, indent=4))
+        return conversation_text, None, conversation_state, False  # False: extra button not shown
+
+    speech_to_text = ""
+    if audio_filepath:
+        speech_to_text = transcribe_with_groq(
+            GROQ_API_KEY=os.environ.get("GROQ_API_KEY"),
+            audio_filepath=audio_filepath,
+            stt_model="whisper-large-v3"
+        ).strip()
+    
+    user_message = ""
+    if speech_to_text:
+        user_message += speech_to_text
+    if chat_input and chat_input.strip():
+        if user_message:
+            user_message += "\n"
+        user_message += chat_input.strip()
+    
+    if not user_message:
+        conversation_text = format_conversation(conversation_state)
+        print("Conversation State:\n", json.dumps(conversation_state, indent=4))
+        return conversation_text, None, conversation_state, False
+
+    # Run mood analysis and append mood report.
+    mood_report_raw = text_to_mood(user_message)
+    processed_mood = process_mood_report(mood_report_raw)
+    conversation_state["messages"].append({"role": "system", "content": f"Mood Report: {processed_mood}"})
+    
+    # Evaluate risk score.
+    risk_score = combined_risk_score(user_message)
+    window, avg_risk = update_risk_window(conversation_state.get("risk_window", []), risk_score)
+    conversation_state["risk_window"] = window
+    print(f"New combined risk score: {risk_score:.2f}, Average over last {WINDOW_SIZE} messages: {avg_risk:.2f}")
+    
+    if avg_risk >= RISK_THRESHOLD:
+        alert_msg = "CRITICAL ALERT: High suicide risk detected. Immediate intervention is recommended."
+        conversation_state["messages"].append({"role": "system", "content": alert_msg})
+    
+    conversation_state["messages"].append({"role": "user", "content": user_message})
+    
+    doctor_response = chat_with_query(
+        messages=conversation_state["messages"],
+        model="llama-3.2-11b-vision-preview"
+    )
+    conversation_state["messages"].append({"role": "assistant", "content": doctor_response})
+    
+    audio_response_path = "final.mp3"
+    text_to_speech_with_elevenlabs(
+        input_text=doctor_response,
+        output_filepath=audio_response_path
+    )
+    
+    save_conversation_history(conversation_state)
+    print("Conversation State:\n", json.dumps(conversation_state, indent=4))
+    
+    conversation_text = format_conversation(conversation_state)
+    
+    # Show extra button if there are at least 15 user messages.
+    user_count = sum(1 for m in conversation_state["messages"] if m["role"] == "user")
+    show_button = user_count >= 2
+    
+    return conversation_text, audio_response_path, conversation_state, show_button
+
+#####################################
+# Gradio Interface using Blocks for dynamic extra button
+#####################################
+with gr.Blocks() as demo:
+    with gr.Row():
+        audio_input = gr.Audio(sources=["microphone"], type="filepath", label="Voice Input")
+        chat_input = gr.Textbox(label="Chat Input", placeholder="Type your message here...")
+    state = gr.State(value={})
+    submit_btn = gr.Button("Submit")
+    conversation_output = gr.Textbox(label="Conversation", lines=10)
+    response_audio = gr.Audio(label="Doctor's Response (Audio)")
+    extra_btn = gr.Button("Get Your Diagnosis Report", visible=False)
+    file_output = gr.File(label="Exported User Prompts")
+    
+    # Process inputs and update outputs.
+    def update_all(audio_filepath, chat_input, state):
+        conv_text, audio_path, new_state, show_btn = process_inputs(audio_filepath, chat_input, state)
+        extra_update = gr.update(visible=show_btn)
+        return conv_text, audio_path, new_state, extra_update
+
+    submit_btn.click(
+        update_all,
+        inputs=[audio_input, chat_input, state],
+        outputs=[conversation_output, response_audio, state, extra_btn]
+    )
+    
+    # When extra button is clicked, export user prompts.
+    def export_prompts(state):
+        filename = export_user_prompts(state)
+        return filename
+
+    extra_btn.click(
+        export_prompts,
+        inputs=[state],
+        outputs=[file_output]
+    )
+    
+demo.launch(debug=True)
+
+================
+File: mood_detection.py
+================
+from dotenv import load_dotenv
+import os
+import requests
+import json
+import time
+
+# Load environment variables
+load_dotenv()
+API_KEY = os.getenv("IMENTIV_API_KEY")
+BASE_URL = "https://api.imentiv.ai/v1"
+
+HEADERS = {
+    "X-API-Key": API_KEY,
+    "accept": "application/json"
+}
+
+# This function takes in a text (in string) and return the mood analysis (in string as well)
+def text_to_mood(aString):
+    upload_url = f"{BASE_URL}/texts"
+
+    # Ensure correct form-data format
+    data = {
+        "text": aString,
+        "video_url": ""  # Ensures the API processes the text, not video
+    }
+    try:
+        # Step 1: Upload the text
+        response = requests.post(upload_url, headers=HEADERS, data=data)
+
+        if response.status_code == 200:
+            # Step 2: If upload is successful, retrieve the text id
+            response_json = response.json()
+            text_id = response_json.get("id")
+            report_url = f"{BASE_URL}/texts/{text_id}/report"
+            data = {
+                "text_id" : text_id
+            }
+            # Step 3: Wait for 3 seconds before fetching the report
+            time.sleep(3)
+            # Step 4: Fetch the report
+            report_response = requests.get(report_url, headers=HEADERS, data=data)
+
+            if report_response.status_code == 200:
+                try:
+                    return report_response.text
+                except ValueError as e:
+                    return f"🚨 Error parsing JSON from report response: {str(e)}"
+            else:
+                return f"⚠️ Report API Error: {report_response.text}"
+        else:
+            return f"⚠️ API Error: {response.text}"
+
+    except requests.exceptions.RequestException as e:
+        return f"🚨 Request Error: {str(e)}"
+
+# This function takes in an audio file and return an analysis of it (in string)
+def audio_to_mood(file):
+    upload_url = f"{BASE_URL}/audios"
+
+    # Prepare the data for uploading the audio
+    data = {
+        "file": file,
+        "video_url": ""  # Ensures the API processes the audio, not video
+    }
+
+    try:
+        # Step 1: Upload the audio
+        response = requests.post(upload_url, headers=HEADERS, data=data)
+
+        if response.status_code == 200:
+            # Step 2: If upload is successful, retrieve the audio id
+            response_json = response.json()
+            audio_id = response_json.get("id")
+            report_url = f"{BASE_URL}/audio/{audio_id}/report"
+            data = {
+                "audio_id" :audio_id
+            }
+            # Step 3: Check the processing status with a while loop
+            processing = True
+            while processing:
+                # Step 3.1: Wait for 3 seconds before checking the status
+                time.sleep(3)
+
+                # Step 3.2: Fetch the report
+                report_response = requests.get(report_url, headers=HEADERS, data=data)
+
+                if report_response.status_code == 200:
+                    # If the report is available, return the report
+                    try:
+                        report_response = report_response.text
+                        processing = False  # Exit the loop as we have the result
+                        return report_response
+                    except ValueError as e:
+                        return f"🚨 Error parsing JSON from report response: {str(e)}"
+                elif report_response.status_code == 202:
+                    # If still processing, keep checking
+                    print("🔄 Processing... Please wait.")
+                else:
+                    # If an error occurs, exit the loop and return the error
+                    return f"⚠️ Report API Error: {report_response.text}"
+
+        else:
+            return f"⚠️ API Error: {response.text}"
+
+    except requests.exceptions.RequestException as e:
+        return f"🚨 Request Error: {str(e)}"
+
+# Example usage
+if __name__ == "__main__":
+    sample_text = "My girlfriend broke up with me today at 3am"
+    print("Text Emotion Analysis Result:")
+    print(text_to_mood(sample_text))
+
+    # sample_audio_path = "sample_audio.wav"  # Ensure this file exists
+    # print("\nAudio Emotion Analysis Result:")
+    # print(audio_to_mood(sample_audio_path))
+
+================
+File: user_prompts.json
+================
+[
+    "hi",
+    "i am experiencing issue"
+]
+
+================
+File: voice_of_the_doctor.py
+================
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import os
+from gtts import gTTS
+
+import subprocess
+import platform
+
+# Step1b: Setup Text to Speech–TTS–model with ElevenLabs
+import elevenlabs
+from elevenlabs.client import ElevenLabs
+
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
+
+from pydub import AudioSegment
+
+
+def change_audio_speed(input_filepath, output_filepath, speed=1.25):
+    """
+    Changes the playback speed of an audio file.
+
+    Args:
+        input_filepath (str): Path to the original audio file.
+        output_filepath (str): Path to save the modified audio file.
+        speed (float): Factor by which to speed up the audio. (e.g., 1.25 for 25% faster)
+    """
+    audio = AudioSegment.from_file(input_filepath)
+    # Modify the frame rate
+    new_frame_rate = int(audio.frame_rate * speed)
+    fast_audio = audio._spawn(audio.raw_data, overrides={"frame_rate": new_frame_rate})
+    # Export the audio with the original frame rate so that playback is faster
+    fast_audio = fast_audio.set_frame_rate(audio.frame_rate)
+    fast_audio.export(output_filepath, format="mp3")
+
+
+# Example usage:
+change_audio_speed("final.mp3", "final_fast.mp3", speed=1.25)
+
+
+def text_to_speech_with_gtts(input_text, output_filepath):
+    language = "en"
+
+    audioobj = gTTS(text=input_text, lang=language, slow=False)
+    audioobj.save(output_filepath)
+    os_name = platform.system()
+    try:
+        if os_name == "Darwin":  # macOS
+            subprocess.run(["afplay", output_filepath])
+        elif os_name == "Windows":
+            from pydub import AudioSegment
+
+            wav_filepath = output_filepath.replace(".mp3", ".wav")
+            AudioSegment.from_mp3(output_filepath).export(wav_filepath, format="wav")
+            subprocess.run(
+                [
+                    "powershell",
+                    "-c",
+                    f'(New-Object Media.SoundPlayer "{wav_filepath}").PlaySync();',
+                ]
+            )
+
+        elif os_name == "Linux":  # Linux
+            subprocess.run(
+                ["aplay", output_filepath]
+            )  # Alternative: use 'mpg123' or 'ffplay'
+        else:
+            raise OSError("Unsupported operating system")
+    except Exception as e:
+        print(f"An error occurred while trying to play the audio: {e}")
+
+
+input_text = "Hi this is Ai with Hassan, autoplay testing!"
+# text_to_speech_with_gtts(input_text=input_text, output_filepath="gtts_testing_autoplay.mp3")
+
+
+def text_to_speech_with_elevenlabs(input_text, output_filepath):
+    client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+    audio = client.generate(
+        text=input_text,
+        voice="Charlotte",
+        output_format="mp3_22050_32",
+        model="eleven_turbo_v2",
+    )
+    elevenlabs.save(audio, output_filepath)
+    os_name = platform.system()
+    try:
+        if os_name == "Darwin":  # macOS
+            subprocess.run(["afplay", output_filepath])
+        elif os_name == "Windows":
+            from pydub import AudioSegment
+
+            wav_filepath = output_filepath.replace(".mp3", ".wav")
+            AudioSegment.from_mp3(output_filepath).export(wav_filepath, format="wav")
+            subprocess.run(
+                [
+                    "powershell",
+                    "-c",
+                    f'(New-Object Media.SoundPlayer "{wav_filepath}").PlaySync();',
+                ]
+            )
+
+        elif os_name == "Linux":  # Linux
+            subprocess.run(
+                ["aplay", output_filepath]
+            )  # Alternative: use 'mpg123' or 'ffplay'
+        else:
+            raise OSError("Unsupported operating system")
+    except Exception as e:
+        print(f"An error occurred while trying to play the audio: {e}")
+
+================
+File: voice_of_the_patient.py
+================
+from dotenv import load_dotenv
+load_dotenv()
+
+
+import logging
+import speech_recognition as sr
+from pydub import AudioSegment
+from io import BytesIO
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def record_audio(file_path, timeout=20, phrase_time_limit=None):
+    """
+    Simplified function to record audio from the microphone and save it as an MP3 file.
+
+    Args:
+    file_path (str): Path to save the recorded audio file.
+    timeout (int): Maximum time to wait for a phrase to start (in seconds).
+    phrase_time_lfimit (int): Maximum time for the phrase to be recorded (in seconds).
+    """
+    recognizer = sr.Recognizer()
+    
+    try:
+        with sr.Microphone() as source:
+            logging.info("Adjusting for ambient noise...")
+            recognizer.adjust_for_ambient_noise(source, duration=1)
+            logging.info("Start speaking now...")
+            
+            # Record the audio
+            audio_data = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+            logging.info("Recording complete.")
+            
+            # Convert the recorded audio to an MP3 file
+            wav_data = audio_data.get_wav_data()
+            audio_segment = AudioSegment.from_wav(BytesIO(wav_data))
+            audio_segment.export(file_path, format="mp3", bitrate="128k")
+            
+            logging.info(f"Audio saved to {file_path}")
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+audio_filepath="patient_voice_test_for_patient.mp3"
+
+#Step2: Setup Speech to text–STT–model for transcription
+import os
+from groq import Groq
+
+GROQ_API_KEY=os.environ.get("GROQ_API_KEY")
+stt_model="whisper-large-v3"
+
+def transcribe_with_groq(stt_model, audio_filepath, GROQ_API_KEY):
+    client=Groq(api_key=GROQ_API_KEY)
+    
+    audio_file=open(audio_filepath, "rb")
+    transcription=client.audio.transcriptions.create(
+        model=stt_model,
+        file=audio_file,
+        language="en"
+    )
+
+    return transcription.text
+
+
+
+================================================================
+End of Codebase
+================================================================

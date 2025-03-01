@@ -136,7 +136,7 @@ const navLinks = [
   { to: '/about', text: 'About' },
   { to: '/therapist', text: 'Therapist' },
   { to: '/transcribe', text: 'Transcribe' },
-  { to: '/analysis', text: 'Mental Analysis' },
+  { to: '/mentalHealthScreen', text: 'Mental Analysis' },
 ]
 
 // User menu items
@@ -148,7 +148,7 @@ const userMenuItems = [
 // Authentication state
 const isAuthenticated = ref(false)
 const user = ref({
-  name: 'Jane Doe',
+  name: 'Depressed John',
   email: 'jane@example.com',
   avatar: 'https://i.pravatar.cc/150?img=5'
 })
